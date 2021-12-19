@@ -57,9 +57,9 @@ class ControllerReference {
       pathParameters.forEach((name, value) => named[Symbol(name)] = value);
       queryParameters.forEach((name, value) => named[Symbol(name)] = value);
 
-      return _instanceMirror
-          .invoke(handler.simpleName, [response], named)
-          .reflectee;
+      _instanceMirror.invoke(handler.simpleName, [response], named).reflectee;
+
+      return true;
     } else {
       return false;
     }
