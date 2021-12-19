@@ -2,13 +2,13 @@ import 'dart:io';
 import 'dart:mirrors';
 
 import 'package:firecrest/src/annotations/controller.dart';
-import 'package:firecrest/src/annotations/middleware.dart' as meta;
+import 'package:firecrest/src/annotations/with_middleware.dart';
 import 'package:firecrest/src/controller_reference.dart';
 import 'package:firecrest/src/error_handler.dart';
-import 'package:firecrest/src/util/meta.dart';
 import 'package:firecrest/src/middleware.dart';
 import 'package:firecrest/src/route.dart';
 import 'package:firecrest/src/server_exception.dart';
+import 'package:firecrest/src/util/meta.dart';
 
 class Firecrest {
   final Map<Route, ControllerReference> _controllers = {};
@@ -116,7 +116,7 @@ class Firecrest {
 
     if (controller != null) {
       var middlewareMetas =
-          allMetaOfType<meta.Middleware>(mirror: controller.mirror.type);
+          allMetaOfType<WithMiddleware>(mirror: controller.mirror.type);
 
       for (var middlewareMeta in middlewareMetas) {
         var middleware = reflectClass(middlewareMeta.type)
