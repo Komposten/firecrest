@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dart_sdk: [ 2.12.0, stable ]
+        dart_sdk: [ 2.12.0, latest ]
 
     container:
       image:  google/dart:${{ matrix.dart_sdk }}
