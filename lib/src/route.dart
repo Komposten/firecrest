@@ -70,6 +70,23 @@ class Route implements Comparable<Route> {
     }
   }
 
+  bool overlapsWith(Route other) =>
+      identical(this, other) || _hasSegmentOverlap(other);
+
+  bool _hasSegmentOverlap(Route other) {
+    if (_segments.length != other._segments.length) {
+      return false;
+    }
+
+    for (var i = 0; i < _segments.length; i++) {
+      if (!_segments[i].overlapsWith(other._segments[i])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -118,12 +135,17 @@ class _Segment implements Comparable<_Segment> {
     return isWild ? ':$name' : name;
   }
 
+  bool overlapsWith(_Segment other) =>
+      identical(this, other) ||
+      runtimeType == other.runtimeType &&
+          (name == other.name || (isWild || other.isWild));
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is _Segment &&
           runtimeType == other.runtimeType &&
-          (name == other.name || (isWild || other.isWild));
+          (name == other.name || (isWild && other.isWild));
 
   @override
   int get hashCode {

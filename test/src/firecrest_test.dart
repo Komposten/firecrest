@@ -24,13 +24,13 @@ void main() {
       expect(
           () => Firecrest(controllers, TestHandler()),
           throwsWithMessage<StateError>(
-              'Two controllers registered for path user: ControllerUser and ControllerUser'));
+              'Two controllers registered for path "user": ControllerUser and ControllerUser'));
 
       controllers = [ControllerUser(), ControllerWild()];
       expect(
           () => Firecrest(controllers, TestHandler()),
           throwsWithMessage<StateError>(
-              'Two controllers registered for path user: ControllerUser and ControllerWild'));
+              'Two controllers registered for path ":wild": ControllerUser and ControllerWild'));
     });
 
     test('controllerWithNoResponseParameter_throwsArgumentError', () {

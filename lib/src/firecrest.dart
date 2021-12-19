@@ -8,11 +8,12 @@ import 'package:firecrest/src/error_handler.dart';
 import 'package:firecrest/src/middleware.dart';
 import 'package:firecrest/src/route.dart';
 import 'package:firecrest/src/server_exception.dart';
+import 'package:firecrest/src/util/controller_map.dart';
 import 'package:firecrest/src/util/meta.dart';
 
 class Firecrest {
-  final Map<Route, ControllerReference> _controllers = {};
-  final Map<Route, List<Middleware>> _middlewares = {};
+  final RouteMap<ControllerReference> _controllers = RouteMap();
+  final RouteMap<List<Middleware>> _middlewares = RouteMap();
   final ErrorHandler _errorHandler;
 
   Firecrest(List<Object> controllers, ErrorHandler errorHandler)
@@ -40,12 +41,9 @@ class Firecrest {
     var reference = ControllerReference.forController(controller);
     _validateHandlers(reference.requestHandlers, controller.runtimeType);
 
-    /* TODO jhj: containsKey doesn't work since we won't have the same hashcode
-                 for a fixed segment and a wild segment!
-     */
     if (_controllers.containsKey(route)) {
       throw StateError(
-          'Two controllers registered for path ${route.path}: ${_controllers[route]!.name} and ${reference.name}');
+          'Two controllers registered for path "${route.path}": ${_controllers[route]!.name} and ${reference.name}');
     }
     _controllers[route] = reference;
   }
