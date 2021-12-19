@@ -1,6 +1,5 @@
 import 'package:firecrest/src/annotations/request_handler.dart';
 import 'package:firecrest/src/controller_reference.dart';
-import 'package:test/scaffolding.dart';
 import 'package:test/test.dart';
 
 import 'test_util/matchers.dart';

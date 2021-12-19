@@ -1,8 +1,7 @@
 name: firecrest
 version: 0.0.1
+description: A lightweight, annotation-based http server written in Dart
 repository: https://github.com/komposten/firecrest
-authors:
-  - komposten
 
 environment:
   sdk: '>=2.12.0 <3.0.0'
