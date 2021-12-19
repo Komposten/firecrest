@@ -1,6 +1,6 @@
 name: firecrest
 version: 0.0.1
-description: A lightweight, annotation-based http server written in Dart
+description: A lightweight, annotation-based http server framework written in Dart
 repository: https://github.com/komposten/firecrest
 
 environment:
