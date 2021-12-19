@@ -1,0 +1,60 @@
+name: Dart CI
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+      - release-*
+  pull_request:
+    branches:
+      - master
+      - develop
+      - release-*
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dart_sdk: [ 2.12.0, stable ]
+
+    container:
+      image:  google/dart:${{ matrix.dart_sdk }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: dart pub get
+      - name: Run tests
+        run: dart test
+
+  analyse:
+    name: Code analysis
+    runs-on: ubuntu-latest
+
+    container:
+      image:  google/dart:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: dart pub get
+      - name: Run analyser
+        run: dart analyze
+
+  format:
+    name: Code format
+    runs-on: ubuntu-latest
+
+    container:
+      image:  google/dart:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Check code format
+        run: dart format --output none --set-exit-if-changed .

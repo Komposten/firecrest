@@ -1,0 +1,168 @@
+import 'package:firecrest/src/route.dart';
+import 'package:test/expect.dart';
+import 'package:test/scaffolding.dart';
+
+void main() {
+  group('path', () {
+    test('withParameters_correctPath', () {
+      var route = Route('some/short/:path');
+      expect(route.path, equals('some/short/:path'));
+
+      route = Route('some/:short/path/:again');
+      expect(route.path, equals('some/:short/path/:again'));
+    });
+
+    test('withEmptySections_pathWithoutEmptySections', () {
+      var route = Route('some/short//path');
+      expect(route.path, equals('some/short/path'));
+    });
+  });
+
+  group('matches', () {
+    test('matchingPathWithNoParameters_returnsTrue', () {
+      var route = Route('some/short/path');
+      expect(route.matches(['some', 'short', 'path']), isTrue);
+    });
+
+    test('matchingPathWithParameters_returnsTrue', () {
+      var route = Route('some/short/:path');
+      expect(route.matches(['some', 'short', 'stick']), isTrue);
+
+      route = Route(':some/short/:path');
+      expect(route.matches(['a', 'short', 'route']), isTrue);
+    });
+
+    test('emptyPath_returnsTrueForEmptyRoute', () {
+      var route = Route('');
+      expect(route.matches([]), isTrue);
+    });
+
+    test('differentPath_returnsFalse', () {
+      var route = Route('some/short/path');
+      expect(route.matches(['some', 'long', 'path']), isFalse);
+
+      route = Route('some/short');
+      expect(route.matches(['some', 'short', 'path']), isFalse);
+
+      route = Route('short/path');
+      expect(route.matches(['some', 'short', 'path']), isFalse);
+
+      route = Route('some/short/path');
+      expect(route.matches(['short', 'path']), isFalse);
+
+      route = Route('some/short/path');
+      expect(route.matches(['some', 'short']), isFalse);
+    });
+  });
+
+  group('getParameters', () {
+    test('wrongNumberOfSegments_throws', () {
+      var route = Route('some/short/path');
+
+      expect(() => route.getParameters(['a', 'b']), throwsArgumentError);
+      expect(
+          () => route.getParameters(['a', 'b', 'c', 'd']), throwsArgumentError);
+    });
+
+    test('noParameters_returnsEmptyList', () {
+      var route = Route('some/short/path');
+      expect(route.getParameters(['a', 'b', 'c']), isEmpty);
+    });
+
+    test('withParameters_returnsParameterValues', () {
+      var route = Route('some/short/:path');
+      expect(route.getParameters(['a', 'b', 'c']), equals({'path': 'c'}));
+
+      route = Route('some/:short/:path');
+      expect(route.getParameters(['a', 'b', 'c']),
+          equals({'short': 'b', 'path': 'c'}));
+
+      route = Route(':some/short/:path');
+      expect(route.getParameters(['a', 'b', 'c']),
+          equals({'some': 'a', 'path': 'c'}));
+    });
+  });
+
+  group('equals', () {
+    test('samePathsWithNoParameters_areEqual', () {
+      var route1 = Route('some/short/path');
+      var route2 = Route('some/short/path');
+
+      expect(route1, equals(route2));
+    });
+
+    test('samePathsWithParameters_areEqual', () {
+      var route1 = Route('some/short/:cat');
+      var route2 = Route('some/short/:cat');
+      var route3 = Route('some/short/:dog');
+      var route4 = Route('some/:short/:dog');
+
+      expect(route1, equals(route2));
+      expect(route1, equals(route3),
+          reason: 'Parameter name should not affect equality');
+      expect(route1, equals(route4),
+          reason: 'Parameter name should not affect equality');
+    });
+
+    test('differentPaths_areNotEqual', () {
+      var route1 = Route('some/short');
+      var route2 = Route('some/short/path');
+      var route3 = Route('some/short2/');
+      var route4 = Route('some/');
+
+      expect(route1, isNot(equals(route2)));
+      expect(route1, isNot(equals(route3)));
+      expect(route1, isNot(equals(route4)));
+    });
+  });
+
+  group('compareTo', () {
+    test('samePathsWithNoParameters_areEqual', () {
+      var route1 = Route('some/short/path');
+      var route2 = Route('some/short/path');
+
+      expect(route1.compareTo(route2), equals(0));
+    });
+
+    test('samePathsWithParameters_areEqual', () {
+      var route1 = Route('some/short/:cat');
+      var route2 = Route('some/short/:cat');
+      var route3 = Route('some/short/:dog');
+      var route4 = Route('some/short/dog');
+
+      expect(route1.compareTo(route2), equals(0));
+      expect(route1.compareTo(route3), equals(0),
+          reason: 'Parameter name should not affect sorting');
+      expect(route1.compareTo(route4), equals(0),
+          reason: 'Parameter name should not affect sorting');
+    });
+
+    test('differentPaths_sortedCorrectly', () {
+      var route1 = Route('some/short');
+      var route2 = Route('some/short/path');
+      var route3 = Route('some/short2/');
+      var route4 = Route('some/');
+      var route5 = Route('some/long/route');
+      var route6 = Route('some/long/path');
+
+      var expected = [route4, route6, route5, route1, route2, route3];
+      var actual = [route1, route2, route3, route4, route5, route6]..sort();
+
+      expect(actual, orderedEquals(expected));
+    });
+  });
+
+  group('parent', () {
+    test('root_returnsNull', () {
+      var route = Route('');
+      expect(route.parent, isNull);
+    });
+
+    test('withPath_returnsParent', () {
+      var route = Route('some/short/path');
+      var expected = Route('some/short');
+
+      expect(route.parent, equals(expected));
+    });
+  });
+}
