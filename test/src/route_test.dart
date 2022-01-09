@@ -19,17 +19,48 @@ void main() {
   });
 
   group('matches', () {
-    test('matchingPathWithNoParameters_returnsTrue', () {
+    test('matchingPathWithNoWilds_returnsTrue', () {
       var route = Route('some/short/path');
       expect(route.matches(['some', 'short', 'path']), isTrue);
     });
 
-    test('matchingPathWithParameters_returnsTrue', () {
+    test('matchingPathWithBasicWilds_returnsTrue', () {
       var route = Route('some/short/:path');
       expect(route.matches(['some', 'short', 'stick']), isTrue);
 
       route = Route(':some/short/:path');
       expect(route.matches(['a', 'short', 'route']), isTrue);
+    });
+
+    test('matchingPathWithSuperWilds_returnsTrue', () {
+      var route = Route('some/short/::path');
+      expect(route.matches(['some', 'short', 'stick']), isTrue);
+      expect(route.matches(['some', 'short', 'thin', 'blue', 'stick']), isTrue);
+
+      route = Route('::some/short/path');
+      expect(route.matches(['a', 'short', 'path']), isTrue);
+      expect(route.matches(['a', 'not', 'so', 'short', 'path']), isTrue);
+
+      route = Route('some/::short/path');
+      expect(route.matches(['some', 'short', 'path']), isTrue);
+      expect(route.matches(['some', 'not', 'so', 'short', 'little', 'path']),
+          isTrue);
+    });
+
+    test('matchingPathWithMixedWilds_returnsTrue', () {
+      var route = Route(':some/short/::path');
+      expect(route.matches(['some', 'short', 'stick']), isTrue);
+      expect(route.matches(['some', 'short', 'thin', 'blue', 'stick']), isTrue);
+
+      route = Route('::some/:short/path');
+      expect(route.matches(['a', 'short', 'path']), isTrue);
+      expect(
+          route.matches(['a', 'not', 'so', 'short', 'narrow', 'path']), isTrue);
+
+      route = Route('some/::short/:path');
+      expect(route.matches(['some', 'short', 'path']), isTrue);
+      expect(route.matches(['some', 'not', 'so', 'short', 'little', 'path']),
+          isTrue);
     });
 
     test('emptyPath_returnsTrueForEmptyRoute', () {
@@ -59,27 +90,180 @@ void main() {
     test('wrongNumberOfSegments_throws', () {
       var route = Route('some/short/path');
 
-      expect(() => route.getParameters(['a', 'b']), throwsArgumentError);
-      expect(
-          () => route.getParameters(['a', 'b', 'c', 'd']), throwsArgumentError);
+      expect(() => route.getParameters(['some', 'short']), throwsArgumentError);
+      expect(() => route.getParameters(['some', 'short', 'path', 'again']),
+          throwsArgumentError);
     });
 
-    test('noParameters_returnsEmptyList', () {
+    test('noWilds_returnsEmptyList', () {
       var route = Route('some/short/path');
-      expect(route.getParameters(['a', 'b', 'c']), isEmpty);
+      expect(route.getParameters(['some', 'short', 'path']), isEmpty);
     });
 
-    test('withParameters_returnsParameterValues', () {
+    test('withBasicWilds_returnsParameterValues', () {
       var route = Route('some/short/:path');
-      expect(route.getParameters(['a', 'b', 'c']), equals({'path': 'c'}));
+      expect(route.getParameters(['some', 'short', 'c']), equals({'path': 'c'}));
 
       route = Route('some/:short/:path');
-      expect(route.getParameters(['a', 'b', 'c']),
+      expect(route.getParameters(['some', 'b', 'c']),
           equals({'short': 'b', 'path': 'c'}));
 
       route = Route(':some/short/:path');
-      expect(route.getParameters(['a', 'b', 'c']),
+      expect(route.getParameters(['a', 'short', 'c']),
           equals({'some': 'a', 'path': 'c'}));
+    });
+
+    test('withSuperWilds_returnsParameterValues', () {
+      var route = Route('some/short/::path');
+      expect(
+          route.getParameters(['some', 'short', 'stick']),
+          equals({
+            'path': ['stick']
+          }));
+      expect(
+          route.getParameters(['some', 'short', 'thin', 'blue', 'stick']),
+          equals({
+            'path': ['thin', 'blue', 'stick']
+          }));
+
+      route = Route('::some/short/path');
+      expect(
+          route.getParameters(['a', 'short', 'path']),
+          equals({
+            'some': ['a']
+          }));
+      expect(
+          route.getParameters(['a', 'not', 'so', 'short', 'path']),
+          equals({
+            'some': ['a', 'not', 'so']
+          }));
+
+      route = Route('some/::short/path');
+      expect(
+          route.getParameters(['some', 'short', 'path']),
+          equals({
+            'short': ['short']
+          }));
+      expect(
+          route.getParameters(['some', 'not', 'so', 'short', 'little', 'path']),
+          equals({
+            'short': ['not', 'so', 'short', 'little']
+          }));
+    });
+
+    test('withMixedWilds_returnsParameterValues', () {
+      var route = Route(':some/short/::path');
+      expect(
+          route.getParameters(['some', 'short', 'stick']),
+          equals({
+            'some': 'some',
+            'path': ['stick']
+          }));
+      expect(
+          route.getParameters(['some', 'short', 'thin', 'blue', 'stick']),
+          equals({
+            'some': 'some',
+            'path': ['thin', 'blue', 'stick']
+          }));
+
+      route = Route('::some/:short/path');
+      expect(
+          route.getParameters(['a', 'short', 'path']),
+          equals({
+            'some': ['a'],
+            'short': 'short'
+          }));
+      expect(
+          route.getParameters(['a', 'not', 'so', 'short', 'path']),
+          equals({
+            'some': ['a', 'not', 'so'],
+            'short': 'short'
+          }));
+
+      route = Route('some/::short/:path');
+      expect(
+          route.getParameters(['some', 'short', 'path']),
+          equals({
+            'short': ['short'],
+            'path': 'path'
+          }));
+      expect(
+          route.getParameters(['some', 'not', 'so', 'short', 'little', 'path']),
+          equals({
+            'short': ['not', 'so', 'short', 'little'],
+            'path': 'path'
+          }));
+    });
+  });
+
+  group('overlapsWith', () {
+    test('differentNumberOfSegments_noOverlap', () {
+      var route1 = Route('some/short/path');
+      var route2 = Route('some/short');
+
+      expect(route1.overlapsWith(route2), isFalse);
+    });
+
+    test('identicalRoutes_doOverlap', () {
+      var route1 = Route('some/short/path');
+      var route2 = Route('some/short/path');
+      expect(route1.overlapsWith(route2), isTrue);
+
+      route1 = Route('some/short/:path');
+      route2 = Route('some/short/:stick');
+      expect(route1.overlapsWith(route2), isTrue);
+
+      route1 = Route('some/::short/path');
+      route2 = Route('some/::long/path');
+      expect(route1.overlapsWith(route2), isTrue);
+
+      route1 = Route('some/::short/:path');
+      route2 = Route('some/::long/:stick');
+      expect(route1.overlapsWith(route2), isTrue);
+    });
+
+    test('normalAndBasicWild_noOverlap', () {
+      var route1 = Route('some/short/path');
+      var route2 = Route('some/short/:path');
+      expect(route1.overlapsWith(route2), isFalse);
+
+      route1 = Route('some/short/path');
+      route2 = Route('some/short/:stick');
+      expect(route1.overlapsWith(route2), isFalse);
+
+      route1 = Route('some/short/path');
+      route2 = Route(':some/:short/:stick');
+      expect(route1.overlapsWith(route2), isFalse);
+    });
+
+    test('normalAndSuperWild_noOverlap', () {
+      var route1 = Route('some/short/path');
+      var route2 = Route('some/::short/path');
+      expect(route1.overlapsWith(route2), isFalse);
+
+      route1 = Route('some/short/path');
+      route2 = Route('some/::short/:stick');
+      expect(route1.overlapsWith(route2), isFalse);
+
+      route1 = Route('some/short/path');
+      route2 = Route('some/::short');
+      expect(route1.overlapsWith(route2), isFalse);
+    });
+
+    test('wildsMixedWithNormalSegments_noOverlap', () {
+      var route1 = Route('some/slightly/:longer/short/:path');
+      var route2 = Route(':some/::slightly/:short/path');
+      expect(route1.overlapsWith(route2), isFalse);
+    });
+
+    test('wildsMixedWithoutNormalSegments_doOverlap', () {
+      var route1 = Route('some/:short/::path');
+      var route2 = Route('some/::short/:path');
+      expect(route1.overlapsWith(route2), isTrue);
+
+      route1 = Route('some/short/:path');
+      route2 = Route('some/short/::path');
+      expect(route1.overlapsWith(route2), isTrue);
     });
   });
 

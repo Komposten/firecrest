@@ -183,6 +183,14 @@ class Firecrest {
     }
   }
 
+  /* TODO jhj: If multiple matches, choose the one with highest priority
+          as determined by normal vs. wild matches.
+          Normal segments earlier have higher priority than later, example:
+           /a/:b and /:a/b
+           The path /a/b matches both, but should prefer the former as it has a
+           normal segment earlier.
+
+       */
   Route? _findRoute(HttpRequest request) {
     for (var _route in _controllers.keys) {
       if (_route.matches(request.uri.pathSegments)) {
