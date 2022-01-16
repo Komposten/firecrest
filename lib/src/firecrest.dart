@@ -8,18 +8,24 @@ import 'package:firecrest/src/error_handler.dart';
 import 'package:firecrest/src/middleware.dart';
 import 'package:firecrest/src/route.dart';
 import 'package:firecrest/src/server_exception.dart';
+import 'package:firecrest/src/statistics/statistics.dart';
+import 'package:firecrest/src/statistics/statistics_collector.dart';
 import 'package:firecrest/src/util/controller_map.dart';
 import 'package:firecrest/src/util/meta.dart';
 
 class Firecrest {
+  final Statistics statistics = Statistics();
   final RouteMap<ControllerReference> _controllers = RouteMap();
   final RouteMap<List<Middleware>> _middlewares = RouteMap();
   final ErrorHandler _errorHandler;
 
   HttpServer? _server;
+  bool _collectStatistics;
 
-  Firecrest(List<Object> controllers, ErrorHandler errorHandler)
-      : _errorHandler = errorHandler {
+  Firecrest(List<Object> controllers, ErrorHandler errorHandler,
+      {bool collectStatistics = true})
+      : _errorHandler = errorHandler,
+        _collectStatistics = collectStatistics {
     _initControllers(controllers);
   }
 
@@ -128,6 +134,8 @@ class Firecrest {
     return list;
   }
 
+  void setCollectStatistics(bool collect) => _collectStatistics = collect;
+
   /// Starts an http server and binds it to the specified host and port.
   Future<void> start(String host, int port) async {
     _server = await HttpServer.bind(host, port);
@@ -143,59 +151,90 @@ class Firecrest {
   }
 
   void _handleRequest(HttpRequest request) async {
-    var uri = request.uri.toString();
-    print('Request received: ${request.method.toUpperCase()} $uri');
-
-    var method = request.method.toLowerCase();
-    Route? route;
-    for (var _route in _controllers.keys) {
-      if (_route.matches(request.uri.pathSegments)) {
-        route = _route;
-        break;
-      }
-    }
+    var statsCollector =
+        _collectStatistics ? DefaultCollector() : MockCollector();
 
     try {
-      var handled = false;
+      var uri = request.uri.toString();
+      print('Request received: ${request.method.toUpperCase()} $uri');
 
-      if (route != null) {
-        var routeController = _controllers[route]!;
-        var middlewares = _middlewares[route]!;
-        var pathParameters = route.getParameters(request.uri.pathSegments);
+      Route? route = _findRoute(request);
+      statsCollector.forRoute(route);
 
-        /* TODO jhj: Validate that all required query parameters are included,
-          and that no unknown query parameters exist!
-       */
-        for (var middleware in middlewares) {
-          if (await middleware.handle(request)) {
-            handled = true;
-          }
+      try {
+        var handled = false;
+
+        if (route != null) {
+          handled =
+              await _handleRequestForRoute(route, request, statsCollector);
         }
 
-        var methodSymbol = Symbol(method);
-        if (routeController.canHandle(methodSymbol) && !handled) {
-          handled = await routeController.invoke(methodSymbol, request.response,
-              pathParameters, request.uri.queryParameters);
+        if (!handled) {
+          throw ServerException(HttpStatus.notFound);
         }
+      } catch (e) {
+        _handleRequestError(e, request, statsCollector);
       }
-
-      if (!handled) {
-        throw ServerException(HttpStatus.notFound);
+    } finally {
+      statsCollector.close();
+      if (_collectStatistics) {
+        statistics.update(statsCollector);
       }
-    } catch (e) {
-      if (e is Error) {
-        throw e;
-      }
-
-      ServerException exception;
-
-      if (e is ServerException) {
-        exception = e;
-      } else {
-        exception = ServerException(HttpStatus.internalServerError, e);
-      }
-
-      _errorHandler.handle(exception, request);
     }
+  }
+
+  Route? _findRoute(HttpRequest request) {
+    for (var _route in _controllers.keys) {
+      if (_route.matches(request.uri.pathSegments)) {
+        return _route;
+      }
+    }
+    return null;
+  }
+
+  Future<bool> _handleRequestForRoute(Route route, HttpRequest request,
+      StatisticsCollector statsCollector) async {
+    var routeController = _controllers[route]!;
+    var middlewares = _middlewares[route]!;
+    var pathParameters = route.getParameters(request.uri.pathSegments);
+
+    var handled = false;
+
+    /* TODO jhj: Validate that all required query parameters are included,
+        and ensure that unknown query parameters are removed from the map!
+     */
+    for (var middleware in middlewares) {
+      statsCollector.begin(middleware);
+      if (await middleware.handle(request)) {
+        handled = true;
+      }
+      statsCollector.end(middleware);
+    }
+
+    statsCollector.begin(routeController);
+    var method = request.method.toLowerCase();
+    var methodSymbol = Symbol(method);
+    if (routeController.canHandle(methodSymbol) && !handled) {
+      handled = await routeController.invoke(methodSymbol, request.response,
+          pathParameters, request.uri.queryParameters);
+    }
+    statsCollector.end(routeController);
+
+    return handled;
+  }
+
+  void _handleRequestError(
+      Object error, HttpRequest request, StatisticsCollector statsCollector) {
+    if (error is Error) {
+      throw error;
+    }
+
+    ServerException exception = error is ServerException
+        ? error
+        : ServerException(HttpStatus.internalServerError, error);
+
+    statsCollector.begin(_errorHandler);
+    _errorHandler.handle(exception, request);
+    statsCollector.end(_errorHandler);
   }
 }
