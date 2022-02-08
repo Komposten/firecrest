@@ -39,8 +39,13 @@ class MockCollector implements StatisticsCollector {
   int get totalTime => 0;
 }
 
-class DefaultCollector implements StatisticsCollector {
-  final int _startTime;
+typedef TimeNow = DateTime Function();
+
+class BasicCollector implements StatisticsCollector {
+  static final _DEFAULT_TIMER = () => DateTime.now();
+
+  late final int _startTime;
+  final TimeNow _getTime;
   final Map<Object, int> _startTimeByHandler = {};
   final Map<Object, int> _timePerHandler = {};
 
@@ -48,37 +53,69 @@ class DefaultCollector implements StatisticsCollector {
   Route? _route;
   int? _totalTime;
 
-  DefaultCollector() : _startTime = DateTime.now().millisecondsSinceEpoch;
+  BasicCollector() : this.withTimeSource(_DEFAULT_TIMER);
+
+  BasicCollector.withTimeSource(DateTime Function() getTime)
+      : _getTime = getTime {
+    _startTime = _now();
+  }
 
   Route? get route {
-    if (!_isClosed) {
-      throw StateError('must call close() first');
-    }
+    _requireClosed();
     return _route;
   }
 
   int get totalTime {
-    if (!_isClosed) {
-      throw StateError('must call close() first');
-    }
+    _requireClosed();
     return _totalTime!;
   }
 
-  Map<Object, int> get timePerHandler => _timePerHandler;
+  Map<Object, int> get timePerHandler {
+    _requireClosed();
+    return _timePerHandler;
+  }
 
-  void forRoute(Route? route) => _route = route;
+  void forRoute(Route? route) {
+    _requireOpen();
+    _route = route;
+  }
 
-  void begin(Object handler) => _startTimeByHandler[handler] = _now();
+  void begin(Object handler) {
+    _requireOpen();
+    _startTimeByHandler[handler] = _now();
+  }
 
-  void end(Object handler) =>
-      _timePerHandler[handler] = _timePassed(_startTimeByHandler[handler]);
+  void end(Object handler) {
+    _requireOpen();
+
+    var startTime = _startTimeByHandler[handler];
+    if (startTime == null) {
+      throw ArgumentError('unknown handler: $handler (${handler.runtimeType})');
+    }
+
+    _timePerHandler[handler] = _timePassed(startTime);
+  }
 
   void close() {
-    _totalTime = _timePassed();
-    _isClosed = true;
+    if (!_isClosed) {
+      _totalTime = _timePassed();
+      _isClosed = true;
+    }
   }
 
   int _timePassed([int? since]) => _now() - (since ?? _startTime);
 
-  int _now() => DateTime.now().millisecondsSinceEpoch;
+  int _now() => _getTime().millisecondsSinceEpoch;
+
+  void _requireClosed() {
+    if (!_isClosed) {
+      throw StateError('must call close() first');
+    }
+  }
+
+  void _requireOpen() {
+    if (_isClosed) {
+      throw StateError('the collector has been closed');
+    }
+  }
 }

@@ -150,9 +150,16 @@ class Firecrest {
     await _server?.close(force: force);
   }
 
+  /* TODO jhj: Can this be broken out into a separate class? In that case we can
+      have both Handler and HandlerWithStatistics, so we get no overhead if
+      stats are disabled.
+      .
+      If the handler can be specified in the constructor, people could implement
+      custom handlers if they wanted.
+   */
   void _handleRequest(HttpRequest request) async {
     var statsCollector =
-        _collectStatistics ? DefaultCollector() : MockCollector();
+        _collectStatistics ? BasicCollector() : MockCollector();
 
     try {
       var uri = request.uri.toString();
