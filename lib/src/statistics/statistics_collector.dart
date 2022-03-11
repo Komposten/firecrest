@@ -16,29 +16,6 @@ abstract class StatisticsCollector {
   Map<Object, int> get timePerHandler;
 }
 
-class MockCollector implements StatisticsCollector {
-  @override
-  void begin(Object handler) {}
-
-  @override
-  void close() {}
-
-  @override
-  void end(Object handler) {}
-
-  @override
-  void forRoute(Route? route) {}
-
-  @override
-  Route? get route => null;
-
-  @override
-  Map<Object, int> get timePerHandler => {};
-
-  @override
-  int get totalTime => 0;
-}
-
 typedef TimeNow = DateTime Function();
 
 class BasicCollector implements StatisticsCollector {

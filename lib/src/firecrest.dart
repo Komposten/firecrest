@@ -150,23 +150,15 @@ class Firecrest {
     await _server?.close(force: force);
   }
 
-  /* TODO jhj: Can this be broken out into a separate class? In that case we can
-      have both Handler and HandlerWithStatistics, so we get no overhead if
-      stats are disabled.
-      .
-      If the handler can be specified in the constructor, people could implement
-      custom handlers if they wanted.
-   */
   void _handleRequest(HttpRequest request) async {
-    var statsCollector =
-        _collectStatistics ? BasicCollector() : MockCollector();
+    var statsCollector = _collectStatistics ? BasicCollector() : null;
 
     try {
       var uri = request.uri.toString();
       print('Request received: ${request.method.toUpperCase()} $uri');
 
       Route? route = _findRoute(request);
-      statsCollector.forRoute(route);
+      statsCollector?.forRoute(route);
 
       try {
         var handled = false;
@@ -183,9 +175,9 @@ class Firecrest {
         _handleRequestError(e, request, statsCollector);
       }
     } finally {
-      statsCollector.close();
+      statsCollector?.close();
       if (_collectStatistics) {
-        statistics.update(statsCollector);
+        statistics.update(statsCollector!);
       }
     }
   }
@@ -200,7 +192,7 @@ class Firecrest {
   }
 
   Future<bool> _handleRequestForRoute(Route route, HttpRequest request,
-      StatisticsCollector statsCollector) async {
+      [StatisticsCollector? statsCollector]) async {
     var routeController = _controllers[route]!;
     var middlewares = _middlewares[route]!;
     var pathParameters = route.getParameters(request.uri.pathSegments);
@@ -211,27 +203,27 @@ class Firecrest {
         and ensure that unknown query parameters are removed from the map!
      */
     for (var middleware in middlewares) {
-      statsCollector.begin(middleware);
+      statsCollector?.begin(middleware);
       if (await middleware.handle(request)) {
         handled = true;
       }
-      statsCollector.end(middleware);
+      statsCollector?.end(middleware);
     }
 
-    statsCollector.begin(routeController);
+    statsCollector?.begin(routeController);
     var method = request.method.toLowerCase();
     var methodSymbol = Symbol(method);
     if (routeController.canHandle(methodSymbol) && !handled) {
       handled = await routeController.invoke(methodSymbol, request.response,
           pathParameters, request.uri.queryParameters);
     }
-    statsCollector.end(routeController);
+    statsCollector?.end(routeController);
 
     return handled;
   }
 
-  void _handleRequestError(
-      Object error, HttpRequest request, StatisticsCollector statsCollector) {
+  void _handleRequestError(Object error, HttpRequest request,
+      [StatisticsCollector? statsCollector]) {
     if (error is Error) {
       throw error;
     }
@@ -240,8 +232,8 @@ class Firecrest {
         ? error
         : ServerException(HttpStatus.internalServerError, error);
 
-    statsCollector.begin(_errorHandler);
+    statsCollector?.begin(_errorHandler);
     _errorHandler.handle(exception, request);
-    statsCollector.end(_errorHandler);
+    statsCollector?.end(_errorHandler);
   }
 }
