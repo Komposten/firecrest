@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:firecrest/src/route.dart';
 
 abstract class StatisticsCollector {
@@ -23,8 +25,8 @@ class BasicCollector implements StatisticsCollector {
 
   late final int _startTime;
   final TimeNow _getTime;
-  final Map<Object, int> _startTimeByHandler = {};
-  final Map<Object, int> _timePerHandler = {};
+  final Map<Object, int> _startTimeByHandler = LinkedHashMap();
+  final Map<Object, int> _timePerHandler = LinkedHashMap();
 
   bool _isClosed = false;
   Route? _route;

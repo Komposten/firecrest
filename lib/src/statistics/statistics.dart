@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:firecrest/src/statistics/statistics_collector.dart';
@@ -30,13 +31,9 @@ class RouteStatistics {
   final int startTime = DateTime.now().millisecondsSinceEpoch;
   int _requestCount = 0;
 
-  /* TODO jhj: Use linked hash maps instead to keep the order of the middlewares
-      and controller?
-      Also applies to StatisticsCollector.
-  */
-  Map<Object, int> _minLatencyPerHandler = {};
-  Map<Object, int> _maxLatencyPerHandler = {};
-  Map<Object, num> _avgLatencyPerHandler = {};
+  Map<Object, int> _minLatencyPerHandler = LinkedHashMap();
+  Map<Object, int> _maxLatencyPerHandler = LinkedHashMap();
+  Map<Object, num> _avgLatencyPerHandler = LinkedHashMap();
 
   int get msSinceStart => DateTime.now().millisecondsSinceEpoch - startTime;
 
