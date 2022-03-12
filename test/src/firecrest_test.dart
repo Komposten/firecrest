@@ -53,18 +53,36 @@ void main() {
     test('controllerThrowsAnError_collectorIsClosedCorrectly', () async {
       var controllers = <Object>[ControllerThatThrows()];
       var firecrest = Firecrest(controllers, TestHandler());
-      firecrest.start('localhost', 31231);
+      await firecrest.start('localhost', 31231);
 
-      var client = HttpClient();
-      var request = await client.get('localhost', 31231, 'i-throw');
-      var responseFuture = request.close();
-
-      expect(responseFuture, completes);
+      var responseFuture = _sendRequest(31231, 'GET', 'i-throw');
+      await expectLater(responseFuture, completes);
       var response = await responseFuture;
       var message = await response.transform(utf8.decoder).join();
 
       expect(response.statusCode, equals(HttpStatus.serviceUnavailable));
       expect(message, equals('i throw! >:o'));
+
+      await firecrest.close();
+    });
+
+    test('statisticsDisabled_doesNotCollect', () async {
+      var controllers = <Object>[];
+      var firecrest = Firecrest(controllers, TestHandler(), collectStatistics: false);
+      await firecrest.start('localhost', 31232);
+
+      await expectLater(_sendRequest(31232, 'GET', 'some-path'), completes);
+      expect(firecrest.statistics.errorStats.requestCount, equals(0));
+
+      firecrest.setCollectStatistics(true);
+      await expectLater(_sendRequest(31232, 'GET', 'some-path'), completes);
+      expect(firecrest.statistics.errorStats.requestCount, equals(1));
+
+      firecrest.setCollectStatistics(false);
+      await expectLater(_sendRequest(31232, 'GET', 'some-path'), completes);
+      expect(firecrest.statistics.errorStats.requestCount, equals(1));
+
+      await firecrest.close();
     });
   });
 
@@ -76,6 +94,12 @@ void main() {
       - ErrorHandler receives 500 if controller throws random object
       - ErrorHandler called if controller throws.
    */
+}
+
+Future<HttpClientResponse> _sendRequest(int port, String method, String path) async {
+  var client = HttpClient();
+  var request = await client.open(method, 'localhost', port, path);
+  return request.close();
 }
 
 class ControllerNoMeta {}

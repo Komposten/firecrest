@@ -91,7 +91,6 @@ class BasicCollector implements StatisticsCollector {
   }
 
   void endAll() {
-    print('ending ' + _openHandlers.map(_handlerToString).join(', '));
     for (var handler in _openHandlers.toList()) {
       end(handler);
     }
