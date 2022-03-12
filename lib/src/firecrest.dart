@@ -16,6 +16,8 @@ class Firecrest {
   final RouteMap<List<Middleware>> _middlewares = RouteMap();
   final ErrorHandler _errorHandler;
 
+  HttpServer? _server;
+
   Firecrest(List<Object> controllers, ErrorHandler errorHandler)
       : _errorHandler = errorHandler {
     _initControllers(controllers);
@@ -126,10 +128,18 @@ class Firecrest {
     return list;
   }
 
+  /// Starts an http server and binds it to the specified host and port.
   Future<void> start(String host, int port) async {
-    var server = await HttpServer.bind(host, port);
-    server.listen(_handleRequest);
+    _server = await HttpServer.bind(host, port);
+    _server!.listen(_handleRequest);
     print('HTTP server started on $host:$port');
+  }
+
+  /// Closes the http server.
+  ///
+  /// See [HttpServer.close] for details.
+  Future<void> close({bool force = false}) async {
+    await _server?.close(force: force);
   }
 
   void _handleRequest(HttpRequest request) async {
