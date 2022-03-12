@@ -2,24 +2,35 @@ import 'dart:collection';
 
 import 'package:firecrest/src/route.dart';
 
+/// Interface for an object that collects statistics for requests.
 abstract class StatisticsCollector {
+  /// Set the [Route] to collect statistics for.
   void forRoute(Route? route);
 
+  /// Begin collection for the specified handler.
   void begin(Object handler);
 
+  /// End collection for the specified handler.
   void end(Object handler);
 
+  /// Close the collector.
+  ///
+  /// No more modifications are permitted after closing the collector.
   void close();
 
+  /// The route set by [forRoute].
   Route? get route;
 
+  /// The total time passed between creating the collector and closing it.
   int get totalTime;
 
+  /// The time spent between [begin] and [end] per handler.
   Map<Object, int> get timePerHandler;
 }
 
 typedef TimeNow = DateTime Function();
 
+/// A basic collector which collects request counts and min/max/avg latencies.
 class BasicCollector implements StatisticsCollector {
   static final _DEFAULT_TIMER = () => DateTime.now();
 
@@ -27,6 +38,8 @@ class BasicCollector implements StatisticsCollector {
   final TimeNow _getTime;
   final Map<Object, int> _startTimeByHandler = LinkedHashMap();
   final Map<Object, int> _timePerHandler = LinkedHashMap();
+
+  List<Object> _openHandlers = [];
 
   bool _isClosed = false;
   Route? _route;
@@ -62,6 +75,7 @@ class BasicCollector implements StatisticsCollector {
   void begin(Object handler) {
     _requireOpen();
     _startTimeByHandler[handler] = _now();
+    _openHandlers.add(handler);
   }
 
   void end(Object handler) {
@@ -69,13 +83,26 @@ class BasicCollector implements StatisticsCollector {
 
     var startTime = _startTimeByHandler[handler];
     if (startTime == null) {
-      throw ArgumentError('unknown handler: $handler (${handler.runtimeType})');
+      throw ArgumentError('unknown handler: ' + _handlerToString(handler));
     }
 
     _timePerHandler[handler] = _timePassed(startTime);
+    _openHandlers.remove(handler);
+  }
+
+  void endAll() {
+    print('ending ' + _openHandlers.map(_handlerToString).join(', '));
+    for (var handler in _openHandlers.toList()) {
+      end(handler);
+    }
   }
 
   void close() {
+    if (_openHandlers.isNotEmpty) {
+      throw StateError(
+          'the following handlers have not been closed with end(): ' +
+              _openHandlers.map(_handlerToString).join(", "));
+    }
     if (!_isClosed) {
       _totalTime = _timePassed();
       _isClosed = true;
@@ -96,5 +123,12 @@ class BasicCollector implements StatisticsCollector {
     if (_isClosed) {
       throw StateError('the collector has been closed');
     }
+  }
+
+  String _handlerToString(Object handler) {
+    String handlerString = handler.toString();
+    Type handlerType = handler.runtimeType;
+
+    return '$handlerString ($handlerType)';
   }
 }

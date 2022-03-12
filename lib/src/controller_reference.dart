@@ -6,11 +6,13 @@ import 'package:firecrest/src/util/meta.dart';
 
 class ControllerReference {
   final String name;
+  final Object controller;
   final InstanceMirror _instanceMirror;
   late final Map<Symbol, MethodMirror> _handlers;
 
   ControllerReference.forController(Object controller)
       : name = controller.runtimeType.toString(),
+        controller = controller,
         _instanceMirror = reflect(controller) {
     _extractMethodHandlers();
   }

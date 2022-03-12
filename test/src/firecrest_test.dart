@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firecrest/src/annotations/controller.dart';
@@ -48,6 +49,25 @@ void main() {
     });
   });
 
+  group('Statistics collection', () {
+    test('controllerThrowsAnError_collectorIsClosedCorrectly', () async {
+      var controllers = <Object>[ControllerThatThrows()];
+      var firecrest = Firecrest(controllers, TestHandler());
+      firecrest.start('localhost', 31231);
+
+      var client = HttpClient();
+      var request = await client.get('localhost', 31231, 'i-throw');
+      var responseFuture = request.close();
+
+      expect(responseFuture, completes);
+      var response = await responseFuture;
+      var message = await response.transform(utf8.decoder).join();
+
+      expect(response.statusCode, equals(HttpStatus.serviceUnavailable));
+      expect(message, equals('i throw! >:o'));
+    });
+  });
+
   /* TEST jhj:
       - Middleware added in correct order
       - Middleware run in order before controller
@@ -82,11 +102,23 @@ class ControllerNoResponseParameter {
   }
 }
 
+@Controller('i-throw')
+class ControllerThatThrows {
+  @RequestHandler()
+  int get(HttpResponse response) {
+    throw ServerException(HttpStatus.serviceUnavailable, 'i throw! >:o');
+  }
+}
+
 class TestHandler implements ErrorHandler {
   final handled = <HttpRequest>[];
 
   @override
   Future<void> handle(ServerException exception, HttpRequest request) async {
     handled.add(request);
+    request.response.statusCode = exception.status;
+    request.response.write(exception.message);
+    await request.response.flush();
+    await request.response.close();
   }
 }

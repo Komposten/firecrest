@@ -150,7 +150,7 @@ class Firecrest {
     await _server?.close(force: force);
   }
 
-  void _handleRequest(HttpRequest request) async {
+  Future<void> _handleRequest(HttpRequest request) async {
     var statsCollector = _collectStatistics ? BasicCollector() : null;
 
     try {
@@ -172,6 +172,7 @@ class Firecrest {
           throw ServerException(HttpStatus.notFound);
         }
       } catch (e) {
+        statsCollector?.endAll();
         _handleRequestError(e, request, statsCollector);
       }
     } finally {
@@ -210,14 +211,14 @@ class Firecrest {
       statsCollector?.end(middleware);
     }
 
-    statsCollector?.begin(routeController);
+    statsCollector?.begin(routeController.controller);
     var method = request.method.toLowerCase();
     var methodSymbol = Symbol(method);
     if (routeController.canHandle(methodSymbol) && !handled) {
       handled = await routeController.invoke(methodSymbol, request.response,
           pathParameters, request.uri.queryParameters);
     }
-    statsCollector?.end(routeController);
+    statsCollector?.end(routeController.controller);
 
     return handled;
   }

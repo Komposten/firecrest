@@ -46,6 +46,17 @@ void main() {
       });
     });
 
+    group('endAll', () {
+      test('multipleOpenHandlers_closesAll', () {
+        collector.begin('1');
+        collector.begin('2');
+        collector.begin('3');
+        collector.endAll();
+
+        expect(() => collector.close(), returnsNormally);
+      });
+    });
+
     group('close', () {
       test('alreadyClosed_doesNotChangeState', () {
         collector.close();
@@ -53,6 +64,15 @@ void main() {
         collector.close();
 
         expect(collector.totalTime, equals(totalTime));
+      });
+
+      test('withOpenHandler_throwsStateError', () {
+        collector.begin('handler');
+        collector.begin('handler2');
+        expect(
+            () => collector.close(),
+            throwsWithMessage<StateError>(
+                'the following handlers have not been closed with end(): handler (String), handler2 (String)'));
       });
     });
 
