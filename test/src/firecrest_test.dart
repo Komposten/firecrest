@@ -68,7 +68,8 @@ void main() {
 
     test('statisticsDisabled_doesNotCollect', () async {
       var controllers = <Object>[];
-      var firecrest = Firecrest(controllers, TestHandler(), collectStatistics: false);
+      var firecrest =
+          Firecrest(controllers, TestHandler(), collectStatistics: false);
       await firecrest.start('localhost', 31232);
 
       await expectLater(_sendRequest(31232, 'GET', 'some-path'), completes);
@@ -96,7 +97,8 @@ void main() {
    */
 }
 
-Future<HttpClientResponse> _sendRequest(int port, String method, String path) async {
+Future<HttpClientResponse> _sendRequest(
+    int port, String method, String path) async {
   var client = HttpClient();
   var request = await client.open(method, 'localhost', port, path);
   return request.close();
