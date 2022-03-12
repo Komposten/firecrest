@@ -7,6 +7,11 @@ class RouteMap<T> {
 
   Iterable<T> get values => _map.values;
 
+  Iterable<MapEntry<Route, T>> get entries => _map.entries;
+
+  Map<K, V> map<K, V>(MapEntry<K, V> Function(Route route, T value) mapper) =>
+      _map.map(mapper);
+
   T? operator [](Route key) {
     var value = _map[key];
 
@@ -38,5 +43,16 @@ class RouteMap<T> {
     // TODO jhj: Optimise
     var overlaps = _map.keys.where((route) => route.overlapsWith(key));
     return overlaps.isNotEmpty ? overlaps.first : null;
+  }
+
+  T computeIfAbsent(Route key, T Function() supplier) {
+    T? value = this[key];
+
+    if (value == null) {
+      value = supplier();
+      this[key] = value!;
+    }
+
+    return value;
   }
 }
