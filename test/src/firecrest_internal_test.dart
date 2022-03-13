@@ -1,11 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:firecrest/src/annotations/controller.dart';
-import 'package:firecrest/src/annotations/request_handler.dart';
-import 'package:firecrest/src/error_handler.dart';
-import 'package:firecrest/src/firecrest.dart';
-import 'package:firecrest/src/server_exception.dart';
+import 'package:firecrest/firecrest.dart';
+import 'package:firecrest/src/firecrest_internal.dart';
 import 'package:test/test.dart';
 
 import 'test_util/matchers.dart';
@@ -15,7 +12,7 @@ void main() {
     test('noControllerMeta_throwsArgumentError', () {
       var controllers = [ControllerNoMeta()];
       expect(
-          () => Firecrest(controllers, TestHandler()),
+          () => FirecrestInternal(controllers, TestHandler()),
           throwsWithMessage<ArgumentError>(
               'ControllerNoMeta is not an @Controller'));
     });
@@ -23,13 +20,13 @@ void main() {
     test('twoControllersForSameRoute_throwsStateError', () {
       List<Object> controllers = [ControllerUser(), ControllerUser()];
       expect(
-          () => Firecrest(controllers, TestHandler()),
+          () => FirecrestInternal(controllers, TestHandler()),
           throwsWithMessage<StateError>(
               'Two controllers registered for path "user": ControllerUser and ControllerUser'));
 
       controllers = [ControllerWild(), ControllerWild2()];
       expect(
-          () => Firecrest(controllers, TestHandler()),
+          () => FirecrestInternal(controllers, TestHandler()),
           throwsWithMessage<StateError>(
               'Two controllers registered for path ":wild": ControllerWild and ControllerWild2'));
     });
@@ -37,13 +34,13 @@ void main() {
     test('controllerWithNoResponseParameter_throwsArgumentError', () {
       var controllers = <Object>[ControllerNoParameters()];
       expect(
-          () => Firecrest(controllers, TestHandler()),
+          () => FirecrestInternal(controllers, TestHandler()),
           throwsWithMessage<ArgumentError>(
               'Request handler "get" in ControllerNoParameters must have an HttpResponse as first positional parameter'));
 
       controllers = [ControllerNoResponseParameter()];
       expect(
-          () => Firecrest(controllers, TestHandler()),
+          () => FirecrestInternal(controllers, TestHandler()),
           throwsWithMessage<ArgumentError>(
               'Request handler "get" in ControllerNoResponseParameter must have an HttpResponse as first positional parameter'));
     });
@@ -52,7 +49,7 @@ void main() {
   group('Statistics collection', () {
     test('controllerThrowsAnError_collectorIsClosedCorrectly', () async {
       var controllers = <Object>[ControllerThatThrows()];
-      var firecrest = Firecrest(controllers, TestHandler());
+      var firecrest = FirecrestInternal(controllers, TestHandler());
       await firecrest.start('localhost', 31231);
 
       var responseFuture = _sendRequest(31231, 'GET', 'i-throw');
@@ -68,8 +65,8 @@ void main() {
 
     test('statisticsDisabled_doesNotCollect', () async {
       var controllers = <Object>[];
-      var firecrest =
-          Firecrest(controllers, TestHandler(), collectStatistics: false);
+      var firecrest = FirecrestInternal(controllers, TestHandler(),
+          collectStatistics: false);
       await firecrest.start('localhost', 31232);
 
       await expectLater(_sendRequest(31232, 'GET', 'some-path'), completes);
@@ -84,6 +81,44 @@ void main() {
       expect(firecrest.statistics.errorStats.requestCount, equals(1));
 
       await firecrest.close();
+    });
+  });
+
+  group('findRoute', () {
+    test('singleMatchingRoute_matchingRouteReturned', () {
+      var controllers = [ControllerUser(), ControllerThatThrows()];
+      var firecrest = FirecrestInternal(controllers, TestHandler());
+
+      var actual = firecrest.findRoute(['user']);
+      expect(actual, isNotNull);
+      expect(actual?.path, equals('user'));
+    });
+
+    test('noMatchingRoute_nullReturned', () {
+      var controllers = [ControllerUser(), ControllerThatThrows()];
+      var firecrest = FirecrestInternal(controllers, TestHandler());
+
+      var actual = firecrest.findRoute(['posts']);
+      expect(actual, isNull);
+    });
+
+    test('multipleMatchingRoutes_highestPriorityRouteReturned', () {
+      var controllers = [
+        ControllerUser(),
+        ControllerWild(),
+        ControllerUserPostsRecent(),
+        ControllerUserWild(),
+        ControllerUserWildRecent()
+      ];
+      var firecrest = FirecrestInternal(controllers, TestHandler());
+
+      var actual = firecrest.findRoute(['user']);
+      expect(actual, isNotNull);
+      expect(actual?.path, equals('user'));
+
+      actual = firecrest.findRoute(['user', 'posts', 'recent']);
+      expect(actual, isNotNull);
+      expect(actual?.path, equals('user/posts/recent'));
     });
   });
 
@@ -108,6 +143,15 @@ class ControllerNoMeta {}
 
 @Controller('user')
 class ControllerUser {}
+
+@Controller('user/posts/recent')
+class ControllerUserPostsRecent {}
+
+@Controller('user/:what/:why')
+class ControllerUserWild {}
+
+@Controller('user/:what/recent')
+class ControllerUserWildRecent {}
 
 @Controller(':wild')
 class ControllerWild {}
