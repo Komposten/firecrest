@@ -59,7 +59,11 @@ class ControllerReference {
       pathParameters.forEach((name, value) => named[Symbol(name)] = value);
       queryParameters.forEach((name, value) => named[Symbol(name)] = value);
 
-      _instanceMirror.invoke(handler.simpleName, [response], named).reflectee;
+      var invocation =
+          _instanceMirror.invoke(handler.simpleName, [response], named);
+      if (invocation.hasReflectee) {
+        await invocation.reflectee;
+      }
 
       return true;
     } else {
