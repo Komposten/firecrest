@@ -57,7 +57,7 @@ class FirecrestInternal implements Firecrest {
 
     if (_controllers.containsKey(route)) {
       throw StateError(
-          'Two controllers registered for path "${route.path}": ${_controllers[route]!.name} and ${reference.name}');
+          'Two controllers registered for path /${route.path}: ${_controllers[route]!.name} and ${reference.name}');
     }
     _controllers[route] = reference;
   }
@@ -166,14 +166,9 @@ class FirecrestInternal implements Firecrest {
       statsCollector?.forRoute(route);
 
       try {
-        var handled = false;
-
         if (route != null) {
-          handled =
-              await _handleRequestForRoute(route, request, statsCollector);
-        }
-
-        if (!handled) {
+          await _handleRequestForRoute(route, request, statsCollector);
+        } else {
           throw ServerException(HttpStatus.notFound);
         }
       } catch (e) {
@@ -209,7 +204,7 @@ class FirecrestInternal implements Firecrest {
     return matches.isNotEmpty ? matches.first : null;
   }
 
-  Future<bool> _handleRequestForRoute(Route route, HttpRequest request,
+  Future<void> _handleRequestForRoute(Route route, HttpRequest request,
       [StatisticsCollector? statsCollector]) async {
     var routeController = _controllers[route]!;
     var middlewares = _middlewares[route]!;
@@ -228,16 +223,19 @@ class FirecrestInternal implements Firecrest {
       statsCollector?.end(middleware);
     }
 
-    statsCollector?.begin(routeController.controller);
-    var method = request.method.toLowerCase();
-    var methodSymbol = Symbol(method);
-    if (routeController.canHandle(methodSymbol) && !handled) {
+    if (!handled) {
+      statsCollector?.begin(routeController.controller);
+      var method = request.method.toLowerCase();
+      var methodSymbol = Symbol(method);
       handled = await routeController.invoke(methodSymbol, request.response,
           pathParameters, request.uri.queryParameters);
-    }
-    statsCollector?.end(routeController.controller);
 
-    return handled;
+      if (!handled) {
+        throw ServerException(HttpStatus.methodNotAllowed,
+            'Method $method is not allowed for route /${route.path}');
+      }
+      statsCollector?.end(routeController.controller);
+    }
   }
 
   void _handleRequestError(Object error, HttpRequest request,

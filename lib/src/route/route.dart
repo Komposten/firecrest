@@ -196,7 +196,7 @@ class Route implements Comparable<Route> {
   /// with a numerical suffix.
   Route _expandToLength(int length) {
     if (!_hasSuperWild) {
-      throw ArgumentError('Route does not contain a super wild: ' + path);
+      throw ArgumentError('Route does not contain a super wild: /' + path);
     }
 
     var newSegments = <Segment>[];

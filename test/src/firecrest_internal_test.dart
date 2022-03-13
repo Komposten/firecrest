@@ -22,13 +22,13 @@ void main() {
       expect(
           () => FirecrestInternal(controllers, TestHandler()),
           throwsWithMessage<StateError>(
-              'Two controllers registered for path "user": ControllerUser and ControllerUser'));
+              'Two controllers registered for path /user: ControllerUser and ControllerUser'));
 
       controllers = [ControllerWild(), ControllerWild2()];
       expect(
           () => FirecrestInternal(controllers, TestHandler()),
           throwsWithMessage<StateError>(
-              'Two controllers registered for path ":wild": ControllerWild and ControllerWild2'));
+              'Two controllers registered for path /:wild: ControllerWild and ControllerWild2'));
     });
 
     test('controllerWithNoResponseParameter_throwsArgumentError', () {
@@ -122,6 +122,22 @@ void main() {
     });
   });
 
+  group('Request validation', () {
+    test('Unhandled method', () async {
+      var controllers = [ControllerWithValidGet()];
+      var firecrest = FirecrestInternal(controllers, TestHandler());
+      firecrest.start('localhost', 31233);
+
+      var responseFuture = _sendRequest(31233, 'POST', 'valid');
+      await expectLater(responseFuture, completes);
+      var response = await responseFuture;
+      var message = await response.transform(utf8.decoder).join();
+
+      expect(response.statusCode, HttpStatus.methodNotAllowed);
+      expect(message, equals('Method post is not allowed for route /valid'));
+    });
+  });
+
   /* TEST jhj:
       - Middleware added in correct order
       - Middleware run in order before controller
@@ -172,6 +188,17 @@ class ControllerNoResponseParameter {
   @RequestHandler()
   String get(String name, {count = 2}) {
     return '$name: $count';
+  }
+}
+
+@Controller('valid')
+class ControllerWithValidGet {
+  @RequestHandler()
+  Future<void> get(HttpResponse response) async {
+    response.statusCode = 200;
+    response.write('Got!');
+    await response.flush();
+    await response.close();
   }
 }
 

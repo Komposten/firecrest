@@ -25,7 +25,7 @@ class RouteMap<T> {
   void operator []=(Route key, T value) {
     if (containsKey(key)) {
       throw StateError(
-          'A key already exists which overlaps with the route "${key.path}"');
+          'A key already exists which overlaps with the route /${key.path}');
     }
 
     _map[key] = value;

@@ -47,6 +47,10 @@ class ControllerReference {
     }
   }
 
+  /// Invokes the handler for the specified [method] with the provided parameters.
+  ///
+  /// Returns `true` if there was a handler for the specified [method], `false`
+  /// otherwise.
   Future<bool> invoke(
       Symbol method,
       HttpResponse response,
