@@ -1,4 +1,4 @@
-import 'package:firecrest/src/route.dart';
+import 'package:firecrest/src/route/route.dart';
 
 class Controller {
   final String path;

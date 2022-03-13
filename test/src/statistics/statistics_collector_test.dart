@@ -1,4 +1,4 @@
-import 'package:firecrest/src/route.dart';
+import 'package:firecrest/src/route/route.dart';
 import 'package:firecrest/src/statistics/statistics_collector.dart';
 import 'package:test/test.dart';
 

@@ -1,4 +1,4 @@
-import 'package:firecrest/src/route.dart';
+import 'package:firecrest/src/route/route.dart';
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
 
@@ -102,7 +102,8 @@ void main() {
 
     test('withBasicWilds_returnsParameterValues', () {
       var route = Route('some/short/:path');
-      expect(route.getParameters(['some', 'short', 'c']), equals({'path': 'c'}));
+      expect(
+          route.getParameters(['some', 'short', 'c']), equals({'path': 'c'}));
 
       route = Route('some/:short/:path');
       expect(route.getParameters(['some', 'b', 'c']),
@@ -264,6 +265,26 @@ void main() {
       route1 = Route('some/short/:path');
       route2 = Route('some/short/::path');
       expect(route1.overlapsWith(route2), isTrue);
+    });
+
+    test('differentLengthsThatCanBeCoveredBySuperWilds_doOverlap', () {
+      // The difference in the paths can be covered by the super wilds
+      // since the super wild simply can be expanded.
+      var route1 = Route(':some/::path');
+      var route2 = Route(':some/::short/:path');
+      expect(route1.overlapsWith(route2), isTrue);
+
+      route1 = Route(':some/::short/:path/:with/stuff');
+      route2 = Route(':some/::short/:path/stuff');
+      expect(route1.overlapsWith(route2), isTrue);
+    });
+
+    test('differentLengthsThatCannotBeCoveredBySuperWilds_noOverlap', () {
+      // The difference in the paths cannot be covered by the super wilds
+      // since there is a normal segment in between.
+      var route1 = Route('::some/:short/path/:with/:extra/stuff');
+      var route2 = Route('::some/:short/path/:with/stuff');
+      expect(route1.overlapsWith(route2), isFalse);
     });
   });
 

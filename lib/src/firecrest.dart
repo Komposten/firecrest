@@ -6,7 +6,7 @@ import 'package:firecrest/src/annotations/with_middleware.dart';
 import 'package:firecrest/src/controller_reference.dart';
 import 'package:firecrest/src/error_handler.dart';
 import 'package:firecrest/src/middleware.dart';
-import 'package:firecrest/src/route.dart';
+import 'package:firecrest/src/route/route.dart';
 import 'package:firecrest/src/server_exception.dart';
 import 'package:firecrest/src/statistics/statistics.dart';
 import 'package:firecrest/src/statistics/statistics_collector.dart';
@@ -189,7 +189,16 @@ class Firecrest {
            /a/:b and /:a/b
            The path /a/b matches both, but should prefer the former as it has a
            normal segment earlier.
-
+          .
+          Another example:
+           /::a/:b/c/:d/:e/f and /::a/:b/c/:d/f
+           The pact /a/b/c/c/d/f matches both, but should prefer the former as
+           the normal segment /c/ will match on the third segment in the input,
+           whereas in the latter /c/ will match on the fourth segment of the
+           input. See below.
+           Input:  /  a/ b / c / c / d /f
+           Path A: /::a/:b /_c_/:d /:e /f
+           Path B: /::a    /:b /_c_/:d /f
        */
   Route? _findRoute(HttpRequest request) {
     for (var _route in _controllers.keys) {

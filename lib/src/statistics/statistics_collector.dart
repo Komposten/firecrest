@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:firecrest/src/route.dart';
+import 'package:firecrest/src/route/route.dart';
 
 /// Interface for an object that collects statistics for requests.
 abstract class StatisticsCollector {

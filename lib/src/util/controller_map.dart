@@ -1,4 +1,4 @@
-import 'package:firecrest/src/route.dart';
+import 'package:firecrest/src/route/route.dart';
 
 class RouteMap<T> {
   final Map<Route, T> _map = <Route, T>{};
