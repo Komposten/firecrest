@@ -6,12 +6,13 @@ import 'package:firecrest/src/annotations/with_middleware.dart';
 import 'package:firecrest/src/controller_reference.dart';
 import 'package:firecrest/src/error_handler.dart';
 import 'package:firecrest/src/middleware.dart';
-import 'package:firecrest/src/route.dart';
+import 'package:firecrest/src/route/route.dart';
 import 'package:firecrest/src/server_exception.dart';
 import 'package:firecrest/src/statistics/statistics.dart';
 import 'package:firecrest/src/statistics/statistics_collector.dart';
 import 'package:firecrest/src/util/controller_map.dart';
 import 'package:firecrest/src/util/meta.dart';
+import 'package:firecrest/src/util/route_comparators.dart';
 
 class Firecrest {
   final Statistics statistics = Statistics();
@@ -183,13 +184,34 @@ class Firecrest {
     }
   }
 
+  /* TEST jhj: Test _findRoute.
+      .
+      Tests for:
+      - Normal and wild
+      - Normal and wild with same first normal index (e.g. /a/b/c and /a/:b/c)
+      .
+      Maybe some Firecrest internals should be moved
+      to a different class so that they can be public without showing up in the
+      public API of the Firecrest class? That way we can test them!
+   */
+  /// Tries to find a route matching the path in the provided [request].
+  ///
+  /// If there is a single match, that match is returned.
+  ///
+  /// If there are multiple matches, the one with highest priority is returned.
+  /// A route has higher priority if it has a normal (i.e. non-wild) segment
+  /// earlier in the path.
   Route? _findRoute(HttpRequest request) {
-    for (var _route in _controllers.keys) {
-      if (_route.matches(request.uri.pathSegments)) {
-        return _route;
+    var matches = <Route>[];
+    for (var route in _controllers.keys) {
+      if (route.matches(request.uri.pathSegments)) {
+        matches.add(route);
       }
     }
-    return null;
+
+    matches.sort((a, b) => compareRouteMatches(a, b, request.uri.pathSegments));
+
+    return matches.isNotEmpty ? matches.first : null;
   }
 
   Future<bool> _handleRequestForRoute(Route route, HttpRequest request,
