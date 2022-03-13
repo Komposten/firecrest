@@ -51,6 +51,40 @@ class Route implements Comparable<Route> {
     return _match(pathSegments) != null;
   }
 
+  /// Finds the index of the first path segments that matches against a
+  /// [SegmentType.normal] segment.
+  ///
+  /// An [ArgumentError] is thrown if the segments in `pathSegments` does not
+  /// match this route. Always check the segments with [matches] first.
+  ///
+  /// If the path has no normal segments, `null` is returned. Otherwise the
+  /// index of the first item in [pathSegments] that matches a normal segment is
+  /// returned.
+  ///
+  /// If [after] is specified, the first normal match after start will be
+  /// returned.
+  int? firstNormalMatch(List<String> pathSegments, [after = -1]) {
+    var match = _match(pathSegments);
+    if (match == null) {
+      throw ArgumentError("The provided path segments don't match this route!");
+    }
+
+    var index = 0;
+
+    for (var pair in match) {
+      var isNormal = !pair.a.isAnyWild;
+
+      if (isNormal && index > after) {
+        return index;
+      }
+
+      var matches = pair.b;
+      index += (matches is List ? matches.length : 1);
+    }
+
+    return null;
+  }
+
   /// Extracts the values of this route's path parameters from the provided path
   /// segments.
   ///

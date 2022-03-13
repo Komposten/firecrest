@@ -86,6 +86,47 @@ void main() {
     });
   });
 
+  group('firstNormalMatch', () {
+    test('routeWithOnlyNormalSegments_returnsZero', () {
+      var route = Route('some/short/path');
+      expect(route.firstNormalMatch(['some', 'short', 'path']), equals(0));
+    });
+
+    test('routeWithBasicWildSegments_returnsIndexOfFirstMatch', () {
+      var route = Route('some/:short/path');
+      expect(route.firstNormalMatch(['some', 'short', 'path']), equals(0));
+
+      route = Route(':some/short/path');
+      expect(route.firstNormalMatch(['some', 'short', 'path']), equals(1));
+
+      route = Route(':some/:short/path');
+      expect(route.firstNormalMatch(['some', 'short', 'path']), equals(2));
+    });
+
+    test('routeWithSuperWildSegments_returnsIndexOfFirstMatch', () {
+      var route = Route('some/::short/path');
+      expect(route.firstNormalMatch(['some', 'short', 'path']), equals(0));
+
+      route = Route(':some/::short/path');
+      expect(route.firstNormalMatch(['some', 'short', 'path']), equals(2));
+      expect(route.firstNormalMatch(['some', 'short', 'little', 'path']),
+          equals(3));
+    });
+
+    test('routeWithOnlyWildSegments_returnsNull', () {
+      var route = Route(':some/:short/:path');
+      expect(route.firstNormalMatch(['some', 'short', 'path']), isNull);
+
+      route = Route(':some/::short/:path');
+      expect(route.firstNormalMatch(['some', 'short', 'path']), isNull);
+    });
+
+    test('withAfterSpecified_returnsIndexOfFirstMatchAfterSpecifiedIndex', () {
+      var route = Route('some/::short/path');
+      expect(route.firstNormalMatch(['some', 'short', 'path'], 0), equals(2));
+    });
+  });
+
   group('getParameters', () {
     test('wrongNumberOfSegments_throws', () {
       var route = Route('some/short/path');
