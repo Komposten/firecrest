@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:firecrest/src/statistics/statistics_collector.dart';
-import 'package:firecrest/src/util/controller_map.dart';
+import 'package:firecrest/src/util/route_map.dart';
 
 /// Collection and aggregation of statistics on a per-route basis.
 ///

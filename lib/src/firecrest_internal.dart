@@ -11,15 +11,15 @@ import 'package:firecrest/src/route/route.dart';
 import 'package:firecrest/src/server_exception.dart';
 import 'package:firecrest/src/statistics/statistics.dart';
 import 'package:firecrest/src/statistics/statistics_collector.dart';
-import 'package:firecrest/src/util/controller_map.dart';
 import 'package:firecrest/src/util/meta.dart';
-import 'package:firecrest/src/util/route_comparators.dart';
-import 'package:meta/meta.dart';
+import 'package:firecrest/src/util/route_lookup.dart';
+import 'package:firecrest/src/util/route_map.dart';
 
 class FirecrestInternal implements Firecrest {
   final Statistics _statistics = Statistics();
   final RouteMap<ControllerReference> _controllers = RouteMap();
   final RouteMap<List<Middleware>> _middlewares = RouteMap();
+  late final RouteLookup _routeLookup;
   final ErrorHandler _errorHandler;
 
   HttpServer? _server;
@@ -33,6 +33,7 @@ class FirecrestInternal implements Firecrest {
       : _errorHandler = errorHandler,
         _collectStatistics = collectStatistics {
     _initControllers(controllers);
+    _routeLookup = RouteLookup(_controllers.keys);
   }
 
   void _initControllers(List<Object> controllers) {
@@ -119,9 +120,9 @@ class FirecrestInternal implements Firecrest {
       {bool onlyTransient = false}) {
     var list = <Middleware>[];
 
-    if (route.parent != null) {
-      list.addAll(
-          _findMiddlewareRecursively(route.parent!, onlyTransient: true));
+    var parent = route.parent;
+    if (parent != null) {
+      list.addAll(_findMiddlewareRecursively(parent, onlyTransient: true));
     }
 
     var controller = _controllers[route];
@@ -162,7 +163,7 @@ class FirecrestInternal implements Firecrest {
       var uri = request.uri.toString();
       print('Request received: ${request.method.toUpperCase()} $uri');
 
-      Route? route = findRoute(request.uri.pathSegments);
+      Route? route = _routeLookup.findRoute(request.uri.pathSegments);
       statsCollector?.forRoute(route);
 
       try {
@@ -181,27 +182,6 @@ class FirecrestInternal implements Firecrest {
         _statistics.update(statsCollector!);
       }
     }
-  }
-
-  /// Tries to find a route matching the path in the provided [request].
-  ///
-  /// If there is a single match, that match is returned.
-  ///
-  /// If there are multiple matches, the one with highest priority is returned.
-  /// A route has higher priority if it has a normal (i.e. non-wild) segment
-  /// earlier in the path.
-  @visibleForTesting
-  Route? findRoute(List<String> pathSegments) {
-    var matches = <Route>[];
-    for (var route in _controllers.keys) {
-      if (route.matches(pathSegments)) {
-        matches.add(route);
-      }
-    }
-
-    matches.sort((a, b) => compareRouteMatches(a, b, pathSegments));
-
-    return matches.isNotEmpty ? matches.first : null;
   }
 
   Future<void> _handleRequestForRoute(Route route, HttpRequest request,

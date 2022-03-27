@@ -150,6 +150,8 @@ class Route implements Comparable<Route> {
     return result;
   }
 
+  List<Segment> get segments => List.unmodifiable(_segments);
+
   String get path => _segments.join('/');
 
   Route? get parent {

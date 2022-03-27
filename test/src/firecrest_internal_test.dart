@@ -84,44 +84,6 @@ void main() {
     });
   });
 
-  group('findRoute', () {
-    test('singleMatchingRoute_matchingRouteReturned', () {
-      var controllers = [ControllerUser(), ControllerThatThrows()];
-      var firecrest = FirecrestInternal(controllers, TestHandler());
-
-      var actual = firecrest.findRoute(['user']);
-      expect(actual, isNotNull);
-      expect(actual?.path, equals('user'));
-    });
-
-    test('noMatchingRoute_nullReturned', () {
-      var controllers = [ControllerUser(), ControllerThatThrows()];
-      var firecrest = FirecrestInternal(controllers, TestHandler());
-
-      var actual = firecrest.findRoute(['posts']);
-      expect(actual, isNull);
-    });
-
-    test('multipleMatchingRoutes_highestPriorityRouteReturned', () {
-      var controllers = [
-        ControllerUser(),
-        ControllerWild(),
-        ControllerUserPostsRecent(),
-        ControllerUserWild(),
-        ControllerUserWildRecent()
-      ];
-      var firecrest = FirecrestInternal(controllers, TestHandler());
-
-      var actual = firecrest.findRoute(['user']);
-      expect(actual, isNotNull);
-      expect(actual?.path, equals('user'));
-
-      actual = firecrest.findRoute(['user', 'posts', 'recent']);
-      expect(actual, isNotNull);
-      expect(actual?.path, equals('user/posts/recent'));
-    });
-  });
-
   group('Request validation', () {
     test('Unhandled method', () async {
       var controllers = [ControllerWithValidGet()];

@@ -40,7 +40,6 @@ class RouteMap<T> {
   }
 
   Route? _overlappingKey(Route key) {
-    // TODO jhj: Optimise
     var overlaps = _map.keys.where((route) => route.overlapsWith(key));
     return overlaps.isNotEmpty ? overlaps.first : null;
   }
