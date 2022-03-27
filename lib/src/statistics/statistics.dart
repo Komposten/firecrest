@@ -12,8 +12,18 @@ import 'package:firecrest/src/util/route_map.dart';
 class Statistics {
   static const TOTAL_KEY = '[TOTAL]';
 
-  RouteMap<RouteStatistics> _stats = RouteMap();
-  RouteStatistics _noRouteStats = RouteStatistics();
+  late RouteMap<RouteStatistics> _stats;
+  late RouteStatistics _noRouteStats;
+
+  Statistics() {
+    reset();
+  }
+
+  /// Clears all statistics.
+  void reset() {
+    _stats = RouteMap();
+    _noRouteStats = RouteStatistics();
+  }
 
   /// Updates the statistics with data from a [StatisticsCollector].
   void update(StatisticsCollector collector) {

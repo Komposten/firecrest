@@ -68,6 +68,43 @@ void main() {
             equals({Statistics.TOTAL_KEY: 7, '1': 5, '2': 1, '3': 1}));
       });
     });
+
+    group('reset', () {
+      test('clearsAllStats', () {
+        int time = 0;
+        final timeNow = () => DateTime.fromMillisecondsSinceEpoch(++time);
+        final collector1 = BasicCollector.withTimeSource(timeNow);
+        final collector2 = BasicCollector.withTimeSource(timeNow);
+        final route1 = Route('/a');
+        final statistics = Statistics();
+
+        collector1
+          ..forRoute(route1)
+          ..begin('1')
+          ..end('1')
+          ..close();
+
+        collector2
+          ..begin('2')
+          ..end('2')
+          ..close();
+
+        statistics.update(collector1);
+        statistics.update(collector2);
+        expect(statistics.statsPerRoute.keys, equals({route1.path}));
+        expect(statistics.errorStats.requestCount, equals(1));
+        expect(statistics.errorStats.minLatencyPerHandler, hasLength(2));
+        expect(statistics.errorStats.maxLatencyPerHandler, hasLength(2));
+        expect(statistics.errorStats.avgLatencyPerHandler, hasLength(2));
+
+        statistics.reset();
+        expect(statistics.statsPerRoute, isEmpty);
+        expect(statistics.errorStats.requestCount, isZero);
+        expect(statistics.errorStats.minLatencyPerHandler, isEmpty);
+        expect(statistics.errorStats.maxLatencyPerHandler, isEmpty);
+        expect(statistics.errorStats.avgLatencyPerHandler, isEmpty);
+      });
+    });
   });
 
   group('RouteStatistics', () {
