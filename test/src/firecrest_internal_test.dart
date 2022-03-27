@@ -9,12 +9,18 @@ import 'test_util/matchers.dart';
 
 void main() {
   group('Controller validation', () {
-    test('noControllerMeta_throwsArgumentError', () {
+    test('validControllers_acceptedAsController', () {
+      var controllers = [ControllerExtending(), ControllerWithMeta()];
+      expect(
+          () => FirecrestInternal(controllers, TestHandler()), returnsNormally);
+    });
+
+    test('noControllerMetaOrSubClass_throwsArgumentError', () {
       var controllers = [ControllerNoMeta()];
       expect(
           () => FirecrestInternal(controllers, TestHandler()),
           throwsWithMessage<ArgumentError>(
-              'ControllerNoMeta is not an @Controller'));
+              'ControllerNoMeta is neither a Controller nor annotated with @Controller'));
     });
 
     test('twoControllersForSameRoute_throwsStateError', () {
@@ -118,6 +124,13 @@ Future<HttpClientResponse> _sendRequest(
 }
 
 class ControllerNoMeta {}
+
+class ControllerExtending extends Controller {
+  ControllerExtending() : super('i-extend');
+}
+
+@Controller('i-meta')
+class ControllerWithMeta {}
 
 @Controller('user')
 class ControllerUser {}

@@ -38,14 +38,22 @@ class FirecrestInternal implements Firecrest {
 
   void _initControllers(List<Object> controllers) {
     for (var controller in controllers) {
-      var controllerMeta = firstMetaOfType<Controller>(object: controller);
+      Route route;
 
-      if (controllerMeta == null) {
-        throw ArgumentError(
-            '${controller.runtimeType} is not an @${Controller}');
+      if (controller is Controller) {
+        route = controller.route;
+      } else {
+        var controllerMeta = firstMetaOfType<Controller>(object: controller);
+
+        if (controllerMeta == null) {
+          throw ArgumentError(
+              '${controller.runtimeType} is neither a $Controller nor annotated with @${Controller}');
+        } else {
+          route = controllerMeta.route;
+        }
       }
 
-      _registerController(controllerMeta.route, controller);
+      _registerController(route, controller);
     }
 
     _registerMiddleware();
@@ -163,6 +171,7 @@ class FirecrestInternal implements Firecrest {
       var uri = request.uri.toString();
       print('Request received: ${request.method.toUpperCase()} $uri');
 
+      // TODO jhj: If the uri ends with /, pathSegments will end with an empty element!
       Route? route = _routeLookup.findRoute(request.uri.pathSegments);
       statsCollector?.forRoute(route);
 
@@ -207,6 +216,9 @@ class FirecrestInternal implements Firecrest {
       statsCollector?.begin(routeController.controller);
       var method = request.method.toLowerCase();
       var methodSymbol = Symbol(method);
+      /* TODO jhj: Convert the query parameters to the expected (basic) types
+          identified by looking at the handler's param list.
+       */
       handled = await routeController.invoke(methodSymbol, request.response,
           pathParameters, request.uri.queryParameters);
 
