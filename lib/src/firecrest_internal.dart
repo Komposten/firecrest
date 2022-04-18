@@ -61,38 +61,13 @@ class FirecrestInternal implements Firecrest {
   }
 
   void _registerController(Route route, Object controller) {
-    var reference = ControllerReference.forController(controller);
-    _validateHandlers(reference.requestHandlers, controller.runtimeType);
+    var reference = ControllerReference.forController(controller, route);
 
     if (_controllers.containsKey(route)) {
       throw StateError(
           'Two controllers registered for path /${route.path}: ${_controllers[route]!.name} and ${reference.name}');
     }
     _controllers[route] = reference;
-  }
-
-  void _validateHandlers(
-      Map<Symbol, MethodMirror> handlers, Type controllerType) {
-    for (var mirror in handlers.values) {
-      var isValid = true;
-      if (mirror.parameters.isEmpty) {
-        isValid = false;
-      } else {
-        var firstParam = mirror.parameters.first;
-
-        if (firstParam.isNamed ||
-            firstParam.isOptional ||
-            !firstParam.type.hasReflectedType ||
-            firstParam.type.reflectedType != HttpResponse) {
-          isValid = false;
-        }
-      }
-
-      if (!isValid) {
-        throw ArgumentError(
-            'Request handler "${MirrorSystem.getName(mirror.simpleName)}" in $controllerType must have an HttpResponse as first positional parameter');
-      }
-    }
   }
 
   void _printRoutes() {
@@ -183,6 +158,9 @@ class FirecrestInternal implements Firecrest {
         }
       } catch (e) {
         statsCollector?.endAll();
+        if (e is Error) {
+          rethrow;
+        }
         _handleRequestError(e, request, statsCollector);
       }
     } finally {
@@ -216,9 +194,6 @@ class FirecrestInternal implements Firecrest {
       statsCollector?.begin(routeController.controller);
       var method = request.method.toLowerCase();
       var methodSymbol = Symbol(method);
-      /* TODO jhj: Convert the query parameters to the expected (basic) types
-          identified by looking at the handler's param list.
-       */
       handled = await routeController.invoke(methodSymbol, request.response,
           pathParameters, request.uri.queryParameters);
 
@@ -232,10 +207,6 @@ class FirecrestInternal implements Firecrest {
 
   void _handleRequestError(Object error, HttpRequest request,
       [StatisticsCollector? statsCollector]) {
-    if (error is Error) {
-      throw error;
-    }
-
     ServerException exception = error is ServerException
         ? error
         : ServerException(HttpStatus.internalServerError, error);

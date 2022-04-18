@@ -60,4 +60,15 @@ class Segment implements Comparable<Segment> {
   }
 }
 
+Type toParameterType(SegmentType segmentType) {
+  switch (segmentType) {
+    case SegmentType.basicWild:
+      return String;
+    case SegmentType.superWild:
+      return <String>[].runtimeType;
+    default:
+      throw ArgumentError('$segmentType does not have a parameter mapping');
+  }
+}
+
 enum SegmentType { normal, basicWild, superWild }

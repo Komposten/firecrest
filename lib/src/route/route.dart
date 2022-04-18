@@ -154,6 +154,9 @@ class Route implements Comparable<Route> {
 
   String get path => _segments.join('/');
 
+  Map<String, SegmentType> get parameters => Map.fromEntries(
+      _segments.where((s) => s.isAnyWild).map((s) => MapEntry(s.name, s.type)));
+
   Route? get parent {
     if (_segments.length > 0) {
       return Route._(_segments.sublist(0, _segments.length - 1));

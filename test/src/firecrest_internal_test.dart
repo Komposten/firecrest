@@ -36,20 +36,6 @@ void main() {
           throwsWithMessage<StateError>(
               'Two controllers registered for path /:wild: ControllerWild and ControllerWild2'));
     });
-
-    test('controllerWithNoResponseParameter_throwsArgumentError', () {
-      var controllers = <Object>[ControllerNoParameters()];
-      expect(
-          () => FirecrestInternal(controllers, TestHandler()),
-          throwsWithMessage<ArgumentError>(
-              'Request handler "get" in ControllerNoParameters must have an HttpResponse as first positional parameter'));
-
-      controllers = [ControllerNoResponseParameter()];
-      expect(
-          () => FirecrestInternal(controllers, TestHandler()),
-          throwsWithMessage<ArgumentError>(
-              'Request handler "get" in ControllerNoResponseParameter must have an HttpResponse as first positional parameter'));
-    });
   });
 
   group('Statistics collection', () {
@@ -149,22 +135,6 @@ class ControllerWild {}
 
 @Controller(':wild')
 class ControllerWild2 {}
-
-@Controller('no-parameters')
-class ControllerNoParameters {
-  @RequestHandler()
-  int get() {
-    return 1;
-  }
-}
-
-@Controller('no-response-parameter')
-class ControllerNoResponseParameter {
-  @RequestHandler()
-  String get(String name, {count = 2}) {
-    return '$name: $count';
-  }
-}
 
 @Controller('valid')
 class ControllerWithValidGet {
