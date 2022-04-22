@@ -46,7 +46,7 @@ void main() {
             equals({Statistics.TOTAL_KEY: 14, '4': 3, '5': 1, '6': 1}));
       });
 
-      test('noRoute_latenciesAddedAsErrorStats', () {
+      test('noRoute_latenciesAddedAsNoRouteStats', () {
         int time = 0;
         final timeNow = () => DateTime.fromMillisecondsSinceEpoch(++time);
         final collector1 = BasicCollector.withTimeSource(timeNow);
@@ -64,7 +64,7 @@ void main() {
         statistics.update(collector1);
 
         expect(statistics.statsPerRoute, isEmpty);
-        expect(statistics.errorStats.avgLatencyPerHandler,
+        expect(statistics.noRouteStats.avgLatencyPerHandler,
             equals({Statistics.TOTAL_KEY: 7, '1': 5, '2': 1, '3': 1}));
       });
     });
@@ -92,17 +92,17 @@ void main() {
         statistics.update(collector1);
         statistics.update(collector2);
         expect(statistics.statsPerRoute.keys, equals({route1.path}));
-        expect(statistics.errorStats.requestCount, equals(1));
-        expect(statistics.errorStats.minLatencyPerHandler, hasLength(2));
-        expect(statistics.errorStats.maxLatencyPerHandler, hasLength(2));
-        expect(statistics.errorStats.avgLatencyPerHandler, hasLength(2));
+        expect(statistics.noRouteStats.requestCount, equals(1));
+        expect(statistics.noRouteStats.minLatencyPerHandler, hasLength(2));
+        expect(statistics.noRouteStats.maxLatencyPerHandler, hasLength(2));
+        expect(statistics.noRouteStats.avgLatencyPerHandler, hasLength(2));
 
         statistics.reset();
         expect(statistics.statsPerRoute, isEmpty);
-        expect(statistics.errorStats.requestCount, isZero);
-        expect(statistics.errorStats.minLatencyPerHandler, isEmpty);
-        expect(statistics.errorStats.maxLatencyPerHandler, isEmpty);
-        expect(statistics.errorStats.avgLatencyPerHandler, isEmpty);
+        expect(statistics.noRouteStats.requestCount, isZero);
+        expect(statistics.noRouteStats.minLatencyPerHandler, isEmpty);
+        expect(statistics.noRouteStats.maxLatencyPerHandler, isEmpty);
+        expect(statistics.noRouteStats.avgLatencyPerHandler, isEmpty);
       });
     });
   });

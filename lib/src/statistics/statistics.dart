@@ -8,7 +8,7 @@ import 'package:firecrest/src/util/route_map.dart';
 ///
 /// Use [StatisticsCollector]s to collect statistics for individual routes and
 /// pass them to [update] to aggregate them together. Aggregated statistics can
-/// be fetched using [statsPerRoute] and [errorStats].
+/// be fetched using [statsPerRoute] and [noRouteStats].
 class Statistics {
   static const TOTAL_KEY = '[TOTAL]';
 
@@ -40,7 +40,7 @@ class Statistics {
       _stats.map((route, value) => MapEntry(route.path, value));
 
   /// Statistics from collectors with no route specified.
-  RouteStatistics get errorStats => _noRouteStats;
+  RouteStatistics get noRouteStats => _noRouteStats;
 }
 
 /// Statistics for a specific route.

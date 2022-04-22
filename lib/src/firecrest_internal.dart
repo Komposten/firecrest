@@ -156,7 +156,8 @@ class FirecrestInternal implements Firecrest {
         if (route != null) {
           await _handleRequestForRoute(route, request, statsCollector);
         } else {
-          throw ServerException(HttpStatus.notFound);
+          throw ServerException(HttpStatus.notFound,
+              'No controller has been registered for path ${request.uri.path}');
         }
       } catch (e) {
         statsCollector?.endAll();
