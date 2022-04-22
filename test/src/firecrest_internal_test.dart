@@ -125,8 +125,14 @@ void main() {
       await expectLater(responseFuture, completes);
       var response = await responseFuture;
 
-      expect(response.cookies.map((e) => '${e.name}=${e.value}'),
-          containsAll(['Middleware1=0', 'Middleware3=1', 'Middleware4=2', 'counter=2']));
+      expect(
+          response.cookies.map((e) => '${e.name}=${e.value}'),
+          containsAll([
+            'Middleware1=0',
+            'Middleware3=1',
+            'Middleware4=2',
+            'counter=2'
+          ]));
       expect(response.cookies, hasLength(4));
 
       await firecrest.close();

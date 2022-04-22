@@ -117,8 +117,7 @@ class FirecrestInternal implements Firecrest {
       for (var middlewareMeta in middlewareMetas) {
         if (!onlyTransient || middlewareMeta.transient) {
           var middleware = reflectClass(middlewareMeta.type)
-              .newInstance(Symbol(''), [])
-              .reflectee as Middleware;
+              .newInstance(Symbol(''), []).reflectee as Middleware;
           list.add(middleware);
         }
       }
