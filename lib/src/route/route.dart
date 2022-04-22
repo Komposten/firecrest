@@ -4,7 +4,6 @@ import 'package:collection/collection.dart';
 import 'package:firecrest/src/route/segment.dart';
 import 'package:firecrest/src/util/pair.dart';
 
-// TODO jhj: Allow simple patterns in wild paths? E.g. :id[L+] or :id[D+]
 class Route implements Comparable<Route> {
   final List<Segment> _segments;
   late final int _indexAfterSuperWild;

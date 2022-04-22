@@ -48,6 +48,8 @@ class RouteLookup {
       return _root.route;
     }
 
+    pathSegments = pathSegments.where((s) => s.isNotEmpty).toList();
+
     var matches = _findRoutes2(_root, -1, pathSegments).toList();
     matches.sort((a, b) => compareRouteMatches(a, b, pathSegments));
 

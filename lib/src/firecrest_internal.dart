@@ -146,7 +146,6 @@ class FirecrestInternal implements Firecrest {
       var uri = request.uri.toString();
       print('Request received: ${request.method.toUpperCase()} $uri');
 
-      // TODO jhj: If the uri ends with /, pathSegments will end with an empty element!
       Route? route = _routeLookup.findRoute(request.uri.pathSegments);
       statsCollector?.forRoute(route);
 
@@ -179,9 +178,6 @@ class FirecrestInternal implements Firecrest {
 
     var handled = false;
 
-    /* TODO jhj: Validate that all required query parameters are included,
-        and ensure that unknown query parameters are removed from the map!
-     */
     for (var middleware in middlewares) {
       statsCollector?.begin(middleware);
       if (await middleware.handle(request)) {

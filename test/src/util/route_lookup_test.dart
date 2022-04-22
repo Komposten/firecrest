@@ -147,6 +147,16 @@ void main() {
       expect(actual, isNull);
     });
 
+    test('emptyPathSegments_ignored', () {
+      var routes = [Route('user/posts/recent')];
+      var lookup = RouteLookup(routes);
+
+      var actual =
+          lookup.findRoute(['', 'user', '', '', 'posts', 'recent', '']);
+      expect(actual, isNotNull);
+      expect(actual?.path, equals('user/posts/recent'));
+    });
+
     test('emptyPath_matchesRootRoute', () {
       var routes = [Route(':wild')];
       var lookup = RouteLookup(routes);
