@@ -115,9 +115,12 @@ class FirecrestInternal implements Firecrest {
           allMetaOfType<WithMiddleware>(mirror: controller.mirror.type);
 
       for (var middlewareMeta in middlewareMetas) {
-        var middleware = reflectClass(middlewareMeta.type)
-            .newInstance(Symbol(''), []).reflectee as Middleware;
-        list.add(middleware);
+        if (!onlyTransient || middlewareMeta.transient) {
+          var middleware = reflectClass(middlewareMeta.type)
+              .newInstance(Symbol(''), [])
+              .reflectee as Middleware;
+          list.add(middleware);
+        }
       }
     }
 
