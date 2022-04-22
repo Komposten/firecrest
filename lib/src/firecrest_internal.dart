@@ -185,6 +185,8 @@ class FirecrestInternal implements Firecrest {
       statsCollector?.begin(middleware);
       if (await middleware.handle(request)) {
         handled = true;
+        statsCollector?.end(middleware);
+        break;
       }
       statsCollector?.end(middleware);
     }
