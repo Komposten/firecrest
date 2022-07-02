@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firecrest/firecrest.dart';
 import 'package:firecrest/src/controller_reference.dart';
 import 'package:firecrest/src/query_parameter.dart';
+import 'package:firecrest/src/util/conversion.dart';
 import 'package:test/test.dart';
 
 import 'test_util/matchers.dart';
@@ -136,6 +137,14 @@ void main() {
             'overwrite': QueryParameter(dynamic, 'overwrite', false),
             'timestamp': QueryParameter(int, 'timestamp', false)
           }));
+    });
+
+    test('withUnsupportedQueryParameterType_throwsExceptions', () {
+      var controller = ControllerWithUnsupportedQueryParameters();
+      expect(
+          () => ControllerReference.forController(controller, controller.route),
+          throwsWithMessage<ArgumentError>(
+              'Method "get" has query parameters of unsupported types: date (DateTime), controller (Controller). Supported types: ${convertibleTypes.join(', ')}'));
     });
   });
 
@@ -336,4 +345,13 @@ class ControllerWithQueryParameters extends Controller {
     this.name = name;
     this.count = count;
   }
+}
+
+class ControllerWithUnsupportedQueryParameters extends Controller {
+  ControllerWithUnsupportedQueryParameters()
+      : super('with-unsupported-query-parameters');
+
+  @RequestHandler()
+  void get(HttpResponse response,
+      {required DateTime date, Controller? controller}) {}
 }

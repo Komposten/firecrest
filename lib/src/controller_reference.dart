@@ -5,6 +5,7 @@ import 'package:firecrest/firecrest.dart';
 import 'package:firecrest/src/query_parameter.dart';
 import 'package:firecrest/src/route/route.dart';
 import 'package:firecrest/src/route/segment.dart';
+import 'package:firecrest/src/util/conversion.dart' as convert;
 import 'package:firecrest/src/util/meta.dart';
 import 'package:firecrest/src/util/query_parameters.dart';
 import 'package:firecrest/src/validation/method_validator.dart';
@@ -73,7 +74,24 @@ class ControllerReference {
       }
     }
 
+    _validateQueryParameterTypes(result, method);
+
     return result;
+  }
+
+  void _validateQueryParameterTypes(
+      Map<String, QueryParameter> result, MethodMirror method) {
+    var withUnsupportedTypes = result.values
+        .where(
+            (parameter) => !convert.convertibleTypes.contains(parameter.type))
+        .map((parameter) => '${parameter.name} (${parameter.type})')
+        .toList();
+    if (withUnsupportedTypes.isNotEmpty) {
+      var methodName = MirrorSystem.getName(method.simpleName);
+      throw ArgumentError(
+          'Method "$methodName" has query parameters of unsupported types: ${withUnsupportedTypes.join(', ')}. '
+          'Supported types: ${convert.convertibleTypes.join(', ')}');
+    }
   }
 
   void _validateMethodHandlers(Map<Symbol, MethodMirror> handlers) {

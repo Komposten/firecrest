@@ -94,10 +94,13 @@ void main() {
     });
 
     group('unsupported types', () {
-      test('returnsOriginalString', () {
+      test('throwsException', () {
         var inputs = {'a': List, 'b': Map, 'c': Set, 'd': DateTime};
         for (var input in inputs.entries) {
-          expect(convertToType(input.key, input.value), equals(input.key));
+          expect(
+              () => convertToType(input.key, input.value),
+              throwsWithMessage<UnsupportedTypeError>(
+                  'No converter exists for converting String to ${input.value}. Supported types: ${convertibleTypes.join(', ')}'));
         }
       });
     });
