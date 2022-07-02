@@ -5,7 +5,6 @@ import 'package:firecrest/firecrest.dart';
 import 'package:firecrest/src/query_parameter.dart';
 import 'package:firecrest/src/route/route.dart';
 import 'package:firecrest/src/route/segment.dart';
-import 'package:firecrest/src/util/conversion.dart' as convert;
 import 'package:firecrest/src/util/meta.dart';
 import 'package:firecrest/src/util/query_parameters.dart';
 import 'package:firecrest/src/validation/method_validator.dart';
@@ -40,12 +39,14 @@ class ControllerReference {
         handlers[symbol] = method;
         queryParameters[symbol] = _extractQueryParameters(method);
       } else {
+        var handler1 = MirrorSystem.getName(method.simpleName);
+        var handler2 = MirrorSystem.getName(handlers[symbol]!.simpleName);
         throw StateError(
-            'Multiple handlers detected for method "${MirrorSystem.getName(symbol)}"');
+            '$name: Multiple handlers detected for method "${MirrorSystem.getName(symbol)}": $handler1, $handler2');
       }
     });
 
-    _validateMethodHandlers(handlers);
+    _validateMethodHandlers(handlers, queryParameters);
 
     _handlers = Map.unmodifiable(handlers);
     _queryParameters = Map.unmodifiable(queryParameters);
@@ -74,28 +75,19 @@ class ControllerReference {
       }
     }
 
-    _validateQueryParameterTypes(result, method);
-
     return result;
   }
 
-  void _validateQueryParameterTypes(
-      Map<String, QueryParameter> result, MethodMirror method) {
-    var withUnsupportedTypes = result.values
-        .where(
-            (parameter) => !convert.convertibleTypes.contains(parameter.type))
-        .map((parameter) => '${parameter.name} (${parameter.type})')
-        .toList();
-    if (withUnsupportedTypes.isNotEmpty) {
-      var methodName = MirrorSystem.getName(method.simpleName);
-      throw ArgumentError(
-          'Method "$methodName" has query parameters of unsupported types: ${withUnsupportedTypes.join(', ')}. '
-          'Supported types: ${convert.convertibleTypes.join(', ')}');
-    }
-  }
-
-  void _validateMethodHandlers(Map<Symbol, MethodMirror> handlers) {
+  void _validateMethodHandlers(Map<Symbol, MethodMirror> handlers,
+      Map<Symbol, Map<String, QueryParameter>> queryParameters) {
     var errors = <String>[];
+    var recordError = (void Function() function) {
+      try {
+        function.call();
+      } on ArgumentError catch (e) {
+        errors.add(e.message);
+      }
+    };
 
     for (var entry in handlers.entries) {
       var handler = entry.value;
@@ -103,19 +95,19 @@ class ControllerReference {
       var pathParameters = route.parameters
           .map((name, type) => MapEntry(name, toParameterType(type)));
 
-      try {
-        MethodValidator.requirePositionalParameterOfType(handler, HttpResponse,
-            index: 0);
-        MethodValidator.requireNamedParameters(handler, pathParameters);
-        MethodValidator.requireOnlyNamedParameters(handler, skip: 1);
-      } on ArgumentError catch (e) {
-        errors.add(e.message);
-      }
+      recordError(() => MethodValidator.requirePositionalParameterOfType(
+          handler, HttpResponse,
+          index: 0));
+      recordError(() =>
+          MethodValidator.requireNamedParameters(handler, pathParameters));
+      recordError(
+          () => MethodValidator.requireOnlyNamedParameters(handler, skip: 1));
+      recordError(() => MethodValidator.requireSupportedQueryParameterTypes(
+          handler, queryParameters[entry.key]!.values));
     }
 
     if (errors.isNotEmpty) {
-      throw ArgumentError(
-          '${controller.runtimeType} has invalid handlers:\n${errors.join('\n')}');
+      throw ArgumentError('$name has invalid handlers:\n${errors.join('\n')}');
     }
   }
 

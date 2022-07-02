@@ -58,7 +58,7 @@ void main() {
       expect(
           () => ControllerReference.forController(controller, controller.route),
           throwsWithMessage<StateError>(
-              'Multiple handlers detected for method "get"'));
+              'ControllerWithDuplicateMethods: Multiple handlers detected for method "get": get, retrieve'));
     });
   });
 
@@ -144,7 +144,8 @@ void main() {
       expect(
           () => ControllerReference.forController(controller, controller.route),
           throwsWithMessage<ArgumentError>(
-              'Method "get" has query parameters of unsupported types: date (DateTime), controller (Controller). Supported types: ${convertibleTypes.join(', ')}'));
+              'ControllerWithUnsupportedQueryParameters has invalid handlers:\n'
+              '"get" has query parameters of unsupported types: date (DateTime), controller (Controller). Supported types: ${convertibleTypes.join(', ')}'));
     });
   });
 
