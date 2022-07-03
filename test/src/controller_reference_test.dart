@@ -11,11 +11,13 @@ import 'test_util/mock_response.dart';
 import 'test_util/pair.dart';
 
 void main() {
+  final conversion = Conversion();
+
   group('name', () {
     test('setToClassName', () {
       var controller = ControllerWithBasicMethods();
-      var reference =
-          ControllerReference.forController(controller, controller.route);
+      var reference = ControllerReference.forController(
+          controller, controller.route, conversion);
       expect(reference.name, equals('ControllerWithBasicMethods'));
     });
   });
@@ -23,8 +25,8 @@ void main() {
   group('Request handler detection', () {
     test('multipleHandlers_allRegistered', () {
       var controller = ControllerWithBasicMethods();
-      var reference =
-          ControllerReference.forController(controller, controller.route);
+      var reference = ControllerReference.forController(
+          controller, controller.route, conversion);
       var handlers = reference.requestHandlers;
 
       expect(
@@ -38,8 +40,8 @@ void main() {
 
     test('handlersWithCustomMethods_customMethodNamesAreUsed', () {
       var controller = ControllerWithCustomMethods();
-      var reference =
-          ControllerReference.forController(controller, controller.route);
+      var reference = ControllerReference.forController(
+          controller, controller.route, conversion);
       var handlers = reference.requestHandlers;
 
       expect(
@@ -56,7 +58,8 @@ void main() {
     test('handlersWithDuplicateMethods_throwsError', () {
       var controller = ControllerWithDuplicateMethods();
       expect(
-          () => ControllerReference.forController(controller, controller.route),
+          () => ControllerReference.forController(
+              controller, controller.route, conversion),
           throwsWithMessage<StateError>(
               'ControllerWithDuplicateMethods: Multiple handlers detected for method "get": get, retrieve'));
     });
@@ -66,13 +69,15 @@ void main() {
     test('noResponseParameter_throwsArgumentError', () {
       Controller controller = ControllerNoParameters();
       expect(
-          () => ControllerReference.forController(controller, controller.route),
+          () => ControllerReference.forController(
+              controller, controller.route, conversion),
           throwsWithMessage<ArgumentError>(
               'ControllerNoParameters has invalid handlers:\n"get" must have a(n) HttpResponse as positional parameter at index 0'));
 
       controller = ControllerNoResponseParameter();
       expect(
-          () => ControllerReference.forController(controller, controller.route),
+          () => ControllerReference.forController(
+              controller, controller.route, conversion),
           throwsWithMessage<ArgumentError>(
               'ControllerNoResponseParameter has invalid handlers:\n"get" must have a(n) HttpResponse as positional parameter at index 0'));
     });
@@ -80,7 +85,8 @@ void main() {
     test('complexValidController_passesValidation', () {
       var controller = ControllerWithEverything();
       expect(
-          () => ControllerReference.forController(controller, controller.route),
+          () => ControllerReference.forController(
+              controller, controller.route, conversion),
           returnsNormally);
     });
 
@@ -92,7 +98,8 @@ void main() {
               '"patch" is missing one or more named parameters: {has}';
 
       expect(
-          () => ControllerReference.forController(controller, controller.route),
+          () => ControllerReference.forController(
+              controller, controller.route, conversion),
           throwsWithMessage<ArgumentError>(expectedMessage));
     });
 
@@ -103,7 +110,8 @@ void main() {
               '"post" has named parameters with incorrect types. They should be: {has: String}\n' +
               '"patch" has named parameters with incorrect types. They should be: {params: List<String>}';
       expect(
-          () => ControllerReference.forController(controller, controller.route),
+          () => ControllerReference.forController(
+              controller, controller.route, conversion),
           throwsWithMessage<ArgumentError>(expectedMessage));
     });
 
@@ -114,7 +122,8 @@ void main() {
               '"get" may only have 1 unnamed parameters\n' +
               '"post" may only have 1 unnamed parameters';
       expect(
-          () => ControllerReference.forController(controller, controller.route),
+          () => ControllerReference.forController(
+              controller, controller.route, conversion),
           throwsWithMessage<ArgumentError>(expectedMessage));
     });
   });
@@ -122,8 +131,8 @@ void main() {
   group('Query parameter extraction', () {
     test('withQueryParameters_extractedCorrectly', () {
       var controller = ControllerWithEverything();
-      var reference =
-          ControllerReference.forController(controller, controller.route);
+      var reference = ControllerReference.forController(
+          controller, controller.route, conversion);
 
       var actual = reference.queryParameters;
 
@@ -142,18 +151,19 @@ void main() {
     test('withUnsupportedQueryParameterType_throwsExceptions', () {
       var controller = ControllerWithUnsupportedQueryParameters();
       expect(
-          () => ControllerReference.forController(controller, controller.route),
+          () => ControllerReference.forController(
+              controller, controller.route, conversion),
           throwsWithMessage<ArgumentError>(
               'ControllerWithUnsupportedQueryParameters has invalid handlers:\n'
-              '"get" has query parameters of unsupported types: date (DateTime), controller (Controller). Supported types: ${convertibleTypes.join(', ')}'));
+              '"get" has query parameters of unsupported types: date (DateTime), controller (Controller). Supported types: ${conversion.convertibleTypes.join(', ')}'));
     });
   });
 
   group('Query parameter validation', () {
     test('unknownParameters_handlerInvokedCorrectly', () async {
       var controller = ControllerWithQueryParameters();
-      var reference =
-          ControllerReference.forController(controller, controller.route);
+      var reference = ControllerReference.forController(
+          controller, controller.route, conversion);
       var query = {'name': 'bob', 'count': '5', 'id': '123', 'date': 'now'};
 
       await expectLater(
@@ -163,8 +173,8 @@ void main() {
 
     test('missingRequiredParameter_throwsServerException', () async {
       var controller = ControllerWithQueryParameters();
-      var reference =
-          ControllerReference.forController(controller, controller.route);
+      var reference = ControllerReference.forController(
+          controller, controller.route, conversion);
       var query = {'count': '5'};
 
       await expectLater(
@@ -175,8 +185,8 @@ void main() {
 
     test('correctParameters_handlerInvokedCorrectly', () async {
       var controller = ControllerWithQueryParameters();
-      var reference =
-          ControllerReference.forController(controller, controller.route);
+      var reference = ControllerReference.forController(
+          controller, controller.route, conversion);
       var query = {'name': 'bob', 'count': '5'};
 
       await expectLater(
@@ -190,8 +200,8 @@ void main() {
   group('invoke', () {
     test('handlerWithEverything_invokedCorrectly', () async {
       var controller = ControllerWithEverything();
-      var reference =
-          ControllerReference.forController(controller, controller.route);
+      var reference = ControllerReference.forController(
+          controller, controller.route, conversion);
       var path = {
         'wild': 'path1',
         'here': ['path2', 'path3']

@@ -5,6 +5,7 @@ import 'package:firecrest/firecrest.dart';
 import 'package:firecrest/src/query_parameter.dart';
 import 'package:firecrest/src/route/route.dart';
 import 'package:firecrest/src/route/segment.dart';
+import 'package:firecrest/src/util/conversion.dart';
 import 'package:firecrest/src/util/meta.dart';
 import 'package:firecrest/src/util/query_parameters.dart';
 import 'package:firecrest/src/validation/method_validator.dart';
@@ -15,10 +16,12 @@ class ControllerReference {
   final Object controller;
   final Route route;
   final InstanceMirror _instanceMirror;
+  final Conversion _typeConversion;
   late final Map<Symbol, MethodMirror> _handlers;
   late final Map<Symbol, Map<String, QueryParameter>> _queryParameters;
 
-  ControllerReference.forController(this.controller, this.route)
+  ControllerReference.forController(
+      this.controller, this.route, this._typeConversion)
       : name = controller.runtimeType.toString(),
         _instanceMirror = reflect(controller) {
     _extractMethodHandlers();
@@ -103,7 +106,7 @@ class ControllerReference {
       recordError(
           () => MethodValidator.requireOnlyNamedParameters(handler, skip: 1));
       recordError(() => MethodValidator.requireSupportedQueryParameterTypes(
-          handler, queryParameters[entry.key]!.values));
+          handler, _typeConversion, queryParameters[entry.key]!.values));
     }
 
     if (errors.isNotEmpty) {
@@ -148,7 +151,8 @@ class ControllerReference {
     queryParameters = Map.of(queryParameters);
     assertRequiredQueryParameters(queryParameters, _queryParameters[method]!);
     removeUnknownParameters(queryParameters, _queryParameters[method]!);
-    return convertQueryParameters(queryParameters, _queryParameters[method]!);
+    return convertQueryParameters(
+        queryParameters, _queryParameters[method]!, _typeConversion);
   }
 
   bool canHandle(Symbol method) => _handlers.containsKey(method);

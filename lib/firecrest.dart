@@ -6,3 +6,4 @@ export 'package:firecrest/src/firecrest.dart';
 export 'package:firecrest/src/middleware.dart';
 export 'package:firecrest/src/server_exception.dart';
 export 'package:firecrest/src/statistics/statistics.dart';
+export 'package:firecrest/src/util/type_converter.dart';

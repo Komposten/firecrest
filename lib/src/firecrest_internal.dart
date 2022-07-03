@@ -11,9 +11,11 @@ import 'package:firecrest/src/route/route.dart';
 import 'package:firecrest/src/server_exception.dart';
 import 'package:firecrest/src/statistics/statistics.dart';
 import 'package:firecrest/src/statistics/statistics_collector.dart';
+import 'package:firecrest/src/util/conversion.dart';
 import 'package:firecrest/src/util/meta.dart';
 import 'package:firecrest/src/util/route_lookup.dart';
 import 'package:firecrest/src/util/route_map.dart';
+import 'package:firecrest/src/util/type_converter.dart';
 
 class FirecrestInternal implements Firecrest {
   final Statistics _statistics = Statistics();
@@ -29,14 +31,18 @@ class FirecrestInternal implements Firecrest {
   Statistics get statistics => _statistics;
 
   FirecrestInternal(List<Object> controllers, ErrorHandler errorHandler,
-      {bool collectStatistics = true})
+      {List<TypeConverter> typeConverters = const [],
+      bool collectStatistics = true})
       : _errorHandler = errorHandler,
         _collectStatistics = collectStatistics {
-    _initControllers(controllers);
+    final typeConversion = Conversion();
+    typeConverters.forEach(typeConversion.addConverter);
+
+    _initControllers(controllers, typeConversion);
     _routeLookup = RouteLookup(_controllers.keys);
   }
 
-  void _initControllers(List<Object> controllers) {
+  void _initControllers(List<Object> controllers, Conversion typeConversion) {
     for (var controller in controllers) {
       Route route;
 
@@ -53,15 +59,17 @@ class FirecrestInternal implements Firecrest {
         }
       }
 
-      _registerController(route, controller);
+      _registerController(route, controller, typeConversion);
     }
 
     _registerMiddleware();
     _printRoutes();
   }
 
-  void _registerController(Route route, Object controller) {
-    var reference = ControllerReference.forController(controller, route);
+  void _registerController(
+      Route route, Object controller, Conversion typeConversion) {
+    var reference =
+        ControllerReference.forController(controller, route, typeConversion);
 
     if (_controllers.containsKey(route)) {
       throw StateError(

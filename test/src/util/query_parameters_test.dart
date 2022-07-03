@@ -1,5 +1,6 @@
 import 'package:firecrest/src/query_parameter.dart';
 import 'package:firecrest/src/server_exception.dart';
+import 'package:firecrest/src/util/conversion.dart';
 import 'package:firecrest/src/util/query_parameters.dart';
 import 'package:test/test.dart';
 
@@ -61,6 +62,7 @@ void main() {
 
   group('convertQueryParameters', () {
     test('differentParameterTypes_convertedToCorrectType', () {
+      var conversion = Conversion();
       var provided = {
         'param1': '1',
         'param2': '2',
@@ -68,7 +70,7 @@ void main() {
         'param4': '4',
       };
 
-      var actual = convertQueryParameters(provided, defined);
+      var actual = convertQueryParameters(provided, defined, conversion);
       expect(actual,
           equals({'param1': '1', 'param2': 2, 'param3': 3.0, 'param4': '4'}));
     });

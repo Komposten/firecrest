@@ -1,7 +1,7 @@
 import 'dart:mirrors';
 
 import 'package:firecrest/src/query_parameter.dart';
-import 'package:firecrest/src/util/conversion.dart' as convert;
+import 'package:firecrest/src/util/conversion.dart';
 
 abstract class MethodValidator {
   MethodValidator._();
@@ -75,11 +75,11 @@ abstract class MethodValidator {
     }
   }
 
-  static void requireSupportedQueryParameterTypes(
-      MethodMirror handler, Iterable<QueryParameter> parameters) {
+  static void requireSupportedQueryParameterTypes(MethodMirror handler,
+      Conversion typeConversion, Iterable<QueryParameter> parameters) {
     var withUnsupportedTypes = parameters
-        .where(
-            (parameter) => !convert.convertibleTypes.contains(parameter.type))
+        .where((parameter) =>
+            !typeConversion.convertibleTypes.contains(parameter.type))
         .map((parameter) => '${parameter.name} (${parameter.type})')
         .toList();
 
@@ -87,7 +87,7 @@ abstract class MethodValidator {
       var methodName = MirrorSystem.getName(handler.simpleName);
       throw ArgumentError(
           '"$methodName" has query parameters of unsupported types: ${withUnsupportedTypes.join(', ')}. '
-          'Supported types: ${convert.convertibleTypes.join(', ')}');
+          'Supported types: ${typeConversion.convertibleTypes.join(', ')}');
     }
   }
 }

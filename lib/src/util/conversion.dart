@@ -1,36 +1,38 @@
-final _converters = {
-  int: int.tryParse,
-  double: double.tryParse,
-  num: num.tryParse,
-  bool: (v) => v != 'false',
-  String: (v) => v,
-  dynamic: (v) => v
-};
+import 'package:firecrest/src/util/type_converter.dart';
 
-final _typeToName = {
-  int: 'integer',
-  num: 'numerical',
-  bool: 'boolean',
-};
+class Conversion {
+  final _converters = {
+    int: TypeConverter<int>(int.tryParse, humanReadableName: 'integer'),
+    double: TypeConverter<double>(double.tryParse, humanReadableName: 'double'),
+    num: TypeConverter<num>(num.tryParse, humanReadableName: 'numerical'),
+    bool: TypeConverter<bool>((v) => v != 'false'),
+    String: TypeConverter<String>((v) => v),
+    dynamic: TypeConverter<dynamic>((v) => v)
+  };
 
-Set<Type> get convertibleTypes => _converters.keys.toSet();
-
-Object convertToType(String string, Type type) {
-  Object? result;
-
-  var converter = _converters[type];
-  if (converter == null) {
-    throw UnsupportedTypeError(type,
-        'No converter exists for converting String to $type. Supported types: ${_converters.keys.join(', ')}');
+  void addConverter(TypeConverter converter) {
+    _converters[converter.type] = converter;
   }
 
-  result = converter.call(string);
-  if (result == null) {
-    final typeName = _typeToName[type] ?? type.toString();
-    throw ArgumentError('$string is not a valid $typeName value');
-  }
+  Set<Type> get convertibleTypes => _converters.keys.toSet();
 
-  return result;
+  Object convertToType(String string, Type type) {
+    Object? result;
+
+    var converter = _converters[type];
+    if (converter == null) {
+      throw UnsupportedTypeError(type,
+          'No converter exists for converting String to $type. Supported types: ${_converters.keys.join(', ')}');
+    }
+
+    result = converter.convert(string);
+    if (result == null) {
+      final typeName = converter.humanReadableName ?? type.toString();
+      throw ArgumentError('$string is not a valid $typeName value');
+    }
+
+    return result;
+  }
 }
 
 class UnsupportedTypeError extends Error {

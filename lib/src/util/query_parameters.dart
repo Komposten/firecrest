@@ -29,7 +29,8 @@ void removeUnknownParameters(Map<String, String> providedParameters,
 
 Map<String, Object> convertQueryParameters(
     Map<String, String> providedParameters,
-    Map<String, QueryParameter> definedParameters) {
+    Map<String, QueryParameter> definedParameters,
+    Conversion typeConversion) {
   var converted = <String, Object>{};
 
   try {
@@ -37,7 +38,7 @@ Map<String, Object> convertQueryParameters(
       var name = entry.key;
       var value = entry.value;
       var type = definedParameters[name]!.type;
-      converted[name] = convertToType(value, type);
+      converted[name] = typeConversion.convertToType(value, type);
     }
   } on ArgumentError catch (e) {
     throw new ServerException(HttpStatus.badRequest, e.message);
