@@ -166,12 +166,12 @@ class FirecrestInternal implements Firecrest {
           throw ServerException(HttpStatus.notFound,
               'No controller has been registered for path ${request.uri.path}');
         }
-      } catch (e) {
+      } catch (e, stacktrace) {
         statsCollector?.endAll();
         if (e is Error) {
           rethrow;
         }
-        _handleRequestError(e, request, statsCollector);
+        await _handleRequestError(e, stacktrace, request, statsCollector);
       }
     } finally {
       statsCollector?.close();
@@ -214,14 +214,20 @@ class FirecrestInternal implements Firecrest {
     }
   }
 
-  void _handleRequestError(Object error, HttpRequest request,
-      [StatisticsCollector? statsCollector]) {
+  Future<void> _handleRequestError(
+      Object error, StackTrace stacktrace, HttpRequest request,
+      [StatisticsCollector? statsCollector]) async {
     ServerException exception = error is ServerException
         ? error
         : ServerException(HttpStatus.internalServerError, error);
 
     statsCollector?.begin(_errorHandler);
-    _errorHandler.handle(exception, request);
-    statsCollector?.end(_errorHandler);
+    try {
+      await _errorHandler.handle(exception, stacktrace, request);
+    } catch (e) {
+      rethrow;
+    } finally {
+      statsCollector?.end(_errorHandler);
+    }
   }
 }

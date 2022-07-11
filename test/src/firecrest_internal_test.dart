@@ -300,7 +300,8 @@ class TestHandler implements ErrorHandler {
   final handled = <HttpRequest>[];
 
   @override
-  Future<void> handle(ServerException exception, HttpRequest request) async {
+  Future<void> handle(ServerException exception, StackTrace stackTrace,
+      HttpRequest request) async {
     handled.add(request);
     request.response.statusCode = exception.status;
     request.response.write(exception.message);
