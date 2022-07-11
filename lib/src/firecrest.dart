@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firecrest/firecrest.dart';
 import 'package:firecrest/src/firecrest_internal.dart';
 
@@ -24,7 +26,7 @@ abstract class Firecrest {
   Statistics get statistics;
 
   /// Starts an http server and binds it to the specified host and port.
-  Future<void> start(String host, int port);
+  Future<void> start(String host, int port, {SecurityContext? securityContext});
 
   /// Closes the http server.
   ///

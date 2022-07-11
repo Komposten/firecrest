@@ -138,8 +138,13 @@ class FirecrestInternal implements Firecrest {
   void setCollectStatistics(bool collect) => _collectStatistics = collect;
 
   @override
-  Future<void> start(String host, int port) async {
-    _server = await HttpServer.bind(host, port);
+  Future<void> start(String host, int port,
+      {SecurityContext? securityContext}) async {
+    if (securityContext != null) {
+      _server = await HttpServer.bindSecure(host, port, securityContext);
+    } else {
+      _server = await HttpServer.bind(host, port);
+    }
     _server!.listen(_handleRequest);
     print('HTTP server started on $host:$port');
   }
